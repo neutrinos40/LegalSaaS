@@ -1,0 +1,20 @@
+{% load i18n %}
+<div class="card">
+    <h2><a class="lien-titre" href="{% url 'liste_dossiers' %}">{% trans "Mes dossiers" %} →</a></h2>
+    {% for dossier in dossiers %}
+        <div class="item"><a class="lien-dossier" href="{% url 'fiche_dossier' dossier.id %}">{{ dossier.titre }}</a> — {{ dossier.client }}</div>
+    {% empty %}
+        <div class="empty">{% trans "Aucun dossier pour le moment." %}</div>
+    {% endfor %}
+    {% if dossiers.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if dossiers.has_previous %}
+            <a class="pg" href="?page_dossiers={{ dossiers.previous_page_number }}&page_echeances={{ echeances_page.number }}&page_rdv={{ rendez_vous.number }}&actif={{ actif }}">‹ {% trans "Précédent" %}</a>
+        {% endif %}
+        <span class="compteur">{% blocktrans with numero=dossiers.number total=dossiers.paginator.num_pages %}Page {{ numero }} / {{ total }}{% endblocktrans %}</span>
+        {% if dossiers.has_next %}
+            <a class="pg" href="?page_dossiers={{ dossiers.next_page_number }}&page_echeances={{ echeances_page.number }}&page_rdv={{ rendez_vous.number }}&actif={{ actif }}">{% trans "Suivant" %} ›</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

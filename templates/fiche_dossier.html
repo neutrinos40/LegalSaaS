@@ -1,0 +1,461 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ dossier.titre }}{% endblock %}
+{% block page_title %}{{ dossier.titre }}{% endblock %}
+
+{% block content %}
+<style>
+    .chrono { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+    .chrono .temps { font-size: 32px; font-weight: bold; color: var(--gold-strong); font-variant-numeric: tabular-nums; }
+    .chrono .total { color: var(--muted); font-size: 13px; }
+
+    .onglets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+    .onglets a {
+        background: var(--focus-bg); color: var(--text); text-decoration: none;
+        border: 1px solid var(--focus-border); border-radius: 4px; padding: 8px 16px; font-size: 14px;
+    }
+    .onglets a:hover { border-color: var(--gold-strong); }
+    .onglets a.actif { background: var(--gold-strong); color: var(--actif-text); font-weight: bold; border-color: var(--gold-strong); }
+
+    .modale-arriere {
+        position: fixed; inset: 0; background: rgba(0, 22, 56, .55); z-index: 100;
+        display: none; align-items: flex-start; justify-content: center; padding: 40px 16px; overflow-y: auto;
+    }
+    .modale-arriere.visible { display: flex; }
+    .modale-carte {
+        background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 6px;
+        padding: 24px; width: 100%; max-width: 520px;
+    }
+    .modale-carte h2 { font-size: 16px; color: var(--gold); margin: 0 0 4px; }
+    .modale-carte select, .modale-carte textarea {
+        background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+        padding: 8px 10px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; width: 100%;
+    }
+    .modale-carte input[type="checkbox"] { width: auto; margin: 0 8px 0 0; display: inline; vertical-align: middle; }
+    .modale-carte .case-coche { display: flex; align-items: center; margin-bottom: 16px; font-size: 14px; }
+    .modale-carte .ligne-boutons { display: flex; gap: 10px; justify-content: flex-end; }
+    .bandeau-alerte {
+        background: var(--rouge-bg); border: 1px solid var(--rouge-border); color: var(--rouge-border);
+        padding: 10px 12px; border-radius: 4px; font-size: 13px; margin: 10px 0 16px;
+    }
+    .btn-secondaire {
+        background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+        padding: 8px 14px; border-radius: 4px; font-size: 14px; cursor: pointer; text-decoration: none;
+    }
+    .btn-secondaire:hover { border-color: var(--gold-strong); }
+
+    .chronologie { list-style: none; margin: 0; padding: 0; }
+    .chronologie li { position: relative; padding: 0 0 18px 26px; border-left: 2px solid var(--line); margin-left: 8px; }
+    .chronologie li:last-child { border-left: 2px solid transparent; }
+    .chronologie .point {
+        position: absolute; left: -7px; top: 2px; width: 12px; height: 12px; border-radius: 50%;
+        background: var(--gold-strong); border: 2px solid var(--card-bg);
+    }
+    .chronologie .type { color: var(--gold); font-weight: bold; font-size: 13px; }
+    .chronologie .date { color: var(--muted); font-size: 12px; margin-left: 8px; }
+    .chronologie .temps-fait { color: var(--vert-border); font-size: 12px; font-weight: bold; }
+
+    .montant-total { font-size: 22px; font-weight: bold; color: var(--gold-strong); }
+    .grille-totaux { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .grille-totaux .carte-total { background: var(--focus-bg); border: 1px solid var(--focus-border); border-radius: 6px; padding: 16px; }
+    .grille-totaux .carte-total .libelle { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .grille-totaux .carte-total .valeur { font-size: 18px; font-weight: bold; color: var(--text); }
+</style>
+
+<div class="card chrono">
+    <div>
+        <h2 style="margin:0 0 4px;">⏱️ {% trans "Chronomètre de temps facturable" %}</h2>
+        <span class="total">{% trans "Temps cumulé sur ce dossier :" %} <strong>{{ total_temps }}</strong></span>
+    </div>
+    <div style="display:flex; align-items:center; gap:14px;">
+        {% if session_chrono %}
+            <span class="temps" id="chrono-affichage">--:--:--</span>
+            <button class="btn" type="button" onclick="ouvrirModale()">{% trans "Arrêter le chrono" %}</button>
+        {% else %}
+            <form method="post" action="{% url 'demarrer_chrono' dossier.id %}{% if source %}?source={{ source }}{% endif %}" style="margin:0;">
+                {% csrf_token %}
+                <button class="btn" type="submit">▶ {% trans "Démarrer le chrono" %}</button>
+            </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="onglets">
+    <a href="{% url 'fiche_dossier' dossier.id %}?onglet=apercu{% if source %}&source={{ source }}{% endif %}" class="{% if onglet == 'apercu' %}actif{% endif %}">{% trans "Aperçu" %}</a>
+    <a href="{% url 'fiche_dossier' dossier.id %}?onglet=documents{% if source %}&source={{ source }}{% endif %}" class="{% if onglet == 'documents' %}actif{% endif %}">{% trans "Documents" %}</a>
+    <a href="{% url 'fiche_dossier' dossier.id %}?onglet=chronologie{% if source %}&source={{ source }}{% endif %}" class="{% if onglet == 'chronologie' %}actif{% endif %}">{% trans "Chronologie" %}</a>
+    <a href="{% url 'fiche_dossier' dossier.id %}?onglet=communications{% if source %}&source={{ source }}{% endif %}" class="{% if onglet == 'communications' %}actif{% endif %}">{% trans "Communications" %}</a>
+    <a href="{% url 'fiche_dossier' dossier.id %}?onglet=rendez-vous{% if source %}&source={{ source }}{% endif %}" class="{% if onglet == 'rendez-vous' %}actif{% endif %}">{% trans "Rendez-vous" %}</a>
+    <a href="{% url 'fiche_dossier' dossier.id %}?onglet=echeances{% if source %}&source={{ source }}{% endif %}" class="{% if onglet == 'echeances' %}actif{% endif %}">{% trans "Échéances & Cour" %}</a>
+    <a href="{% url 'fiche_dossier' dossier.id %}?onglet=facturation{% if source %}&source={{ source }}{% endif %}" class="{% if onglet == 'facturation' %}actif{% endif %}">{% trans "Facturation" %}</a>
+</div>
+
+{% if session_chrono %}
+<script>
+    (function () {
+        var debut = new Date("{{ session_chrono.debut|date:'c' }}").getTime();
+        var aff = document.getElementById('chrono-affichage');
+        function maj() {
+            var s = Math.max(Math.floor((Date.now() - debut) / 1000), 0);
+            var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            aff.textContent = (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+        }
+        maj();
+        setInterval(maj, 1000);
+    })();
+</script>
+{% endif %}
+
+{% if onglet == 'apercu' %}
+<div class="grid">
+    <div class="card">
+        <h2>{% trans "Client" %}</h2>
+        <div class="meta">
+            <span class="statut actif">{{ dossier.client.get_type_client_display }}</span><br>
+            <strong>{% trans "Nom :" %}</strong> {{ dossier.client.nom_complet }}<br>
+            {% if dossier.client.type_client == 'compagnie' %}
+                <strong>{% trans "Représentant :" %}</strong> {{ dossier.client.nom_representant|default:"—" }}<br>
+            {% endif %}
+            {% if dossier.client.email %}<strong>{% trans "Courriel :" %}</strong> {{ dossier.client.email }}<br>{% endif %}
+            {% if dossier.client.telephone %}<strong>{% trans "Téléphone :" %}</strong> {{ dossier.client.telephone }}<br>{% endif %}
+            {% if dossier.client.adresse %}<strong>{% trans "Adresse :" %}</strong> {{ dossier.client.adresse }}{% endif %}
+        </div>
+    </div>
+    <div class="card">
+        <h2>{% trans "Dossier" %}</h2>
+        <div class="meta">
+            <strong>{% trans "Statut :" %}</strong> <span class="statut {{ dossier.statut }}">{{ dossier.get_statut_display }}</span><br>
+            <strong>{% trans "Procédure :" %}</strong> {{ dossier.get_type_procedure_display }}<br>
+            <strong>{% trans "Début :" %}</strong> {{ dossier.date_debut|date:"d/m/Y" }}<br>
+            <strong>{% trans "Taux horaire :" %}</strong> {{ taux }} $/h<br>
+            {% if dossier.notes %}<strong>{% trans "Notes :" %}</strong> {{ dossier.notes }}{% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h2>{% trans "Prochaine échéance" %}</h2>
+        {% for echeance, urgence, jours in echeances %}
+            {% if forloop.first %}
+                <div class="item {{ urgence }}">
+                    <strong>{{ echeance.type_delai }}</strong> — {{ echeance.date_limite|date:"d/m/Y" }}
+                    {% if echeance.statut == 'depasse' %}
+                        <span class="badge">{% trans "DÉPASSÉE" %}</span>
+                    {% else %}
+                        <span class="jours">{% blocktrans %}J-{{ jours }}{% endblocktrans %}</span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% empty %}
+            <div class="empty">{% trans "Aucune échéance." %}</div>
+        {% endfor %}
+    </div>
+    <div class="card">
+        <h2>{% trans "Prochains rendez-vous" %}</h2>
+        {% for rdv in rendez_vous %}
+            {% if forloop.first %}
+                <div class="item">
+                    {{ rdv.date_heure|date:"d/m/Y H:i" }}
+                    <span class="jours">{{ rdv.get_mode_display }}</span>
+                </div>
+            {% endif %}
+        {% empty %}
+            <div class="empty">{% trans "Aucun rendez-vous." %}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% if onglet == 'documents' %}
+<div class="layout">
+    <div class="card">
+        <h2>{% trans "Documents du client" %} ({{ documents|length }})</h2>
+        {% for doc in documents %}
+            <div class="item">
+                <strong>
+                    {% if doc.type_fichier == 'pdf' %}📄
+                    {% elif doc.type_fichier == 'docx' %}📝
+                    {% else %}🖼️{% endif %}
+                    {{ doc.nom_original }}
+                </strong>
+                <span class="meta">{{ doc.date_upload|date:"d/m/Y" }}</span>
+                {% if doc.dossier %}<span class="meta">{{ doc.dossier.titre|truncatechars:25 }}</span>{% endif %}
+                {% if doc.type_fichier == 'docx' or doc.type_fichier == 'pdf' or doc.type_fichier == 'txt' %}
+                    <a class="btn" style="padding:2px 10px;font-size:12px;" href="{% url 'analyser_document' doc.id %}">🤖 {% trans "Analyser" %}</a>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="empty">{% trans "Aucun document pour ce client." %}</div>
+        {% endfor %}
+    </div>
+    <div class="col-droite">
+        <div class="card">
+            <h2>{% trans "Ajouter un document" %}</h2>
+            <form method="post" action="{% url 'ajouter_document' dossier.id %}{% if source %}?source={{ source }}{% endif %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ document_form.dossier.as_hidden }}
+                {{ document_form.client.as_hidden }}
+                {% for field in document_form %}
+                    {% if field.name != 'dossier' and field.name != 'client' %}
+                        <div class="champ">
+                            {{ field.label_tag }}
+                            {{ field }}
+                            {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <button class="btn" type="submit">{% trans "Téléverser" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if onglet == 'chronologie' %}
+<div class="card">
+    <h2>{% trans "Chronologie du dossier" %}</h2>
+    <ul class="chronologie">
+        {% for ev in chronologie %}
+            <li>
+                <span class="point"></span>
+                <span class="type">
+                    {% if ev.type == 'echeance' %}⏰ {% trans "Échéance" %}
+                    {% elif ev.type == 'rdv' %}🤝 {% trans "Rendez-vous" %}
+                    {% elif ev.type == 'communication' %}✉️ {% trans "Communication" %}
+                    {% elif ev.type == 'temps' %}⏱️ {% trans "Temps facturable" %}
+                    {% else %}📄 {% trans "Document" %}{% endif %}
+                </span>
+                <span class="date">{{ ev.date|date:"d/m/Y H:i" }}</span><br>
+                {% if ev.type == 'echeance' %}
+                    {{ ev.objet.type_delai }} — {{ ev.objet.date_limite|date:"d/m/Y" }}
+                    {% if ev.objet.statut == 'depasse' %}<span class="badge">{% trans "DÉPASSÉE" %}</span>{% endif %}
+                {% elif ev.type == 'rdv' %}
+                    {{ ev.objet.date_heure|date:"d/m/Y H:i" }} — {{ ev.objet.get_mode_display }}
+                    {% if ev.objet.statut != 'planifie' %}({{ ev.objet.get_statut_display }}){% endif %}
+                {% elif ev.type == 'communication' %}
+                    {{ ev.objet.get_type_communication_display }} — {{ ev.objet.description|truncatechars:80 }}
+                {% elif ev.type == 'temps' %}
+                    <span class="temps-fait">{{ ev.objet.duree_formatee }}</span> — {{ ev.objet.description|truncatechars:80 }}
+                    ({{ ev.objet.montant }} $)
+                {% else %}
+                    {{ ev.objet.nom_original }}
+                {% endif %}
+            </li>
+        {% empty %}
+            <div class="empty">{% trans "Aucun événement pour ce dossier." %}</div>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if onglet == 'communications' %}
+<div class="layout">
+    <div class="card">
+        <h2>{% trans "Communications" %}</h2>
+        {% for comm in communications %}
+            <div class="item">
+                <strong>{{ comm.get_type_communication_display }}</strong>
+                <span class="meta">{{ comm.date|date:"d/m/Y H:i" }}</span><br>
+                {{ comm.description }}
+            </div>
+        {% empty %}
+            <div class="empty">{% trans "Aucune communication pour ce dossier." %}</div>
+        {% endfor %}
+    </div>
+    <div class="col-droite">
+        <div class="card">
+            <h2>{% trans "Ajouter une communication" %}</h2>
+            <form method="post" action="{% url 'ajouter_communication' dossier.id %}{% if source %}?source={{ source }}{% endif %}">
+                {% csrf_token %}
+                {% for field in communication_form %}
+                    <div class="champ">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="btn" type="submit">{% trans "Ajouter" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if onglet == 'rendez-vous' %}
+<div class="card">
+    <h2>{% trans "Rendez-vous du dossier" %}</h2>
+    {% for rdv in rendez_vous %}
+        <div class="item">
+            {{ rdv.date_heure|date:"d/m/Y H:i" }}
+            <span class="jours">{{ rdv.get_mode_display }}</span>
+            {% if rdv.lieu_ou_lien %}— {{ rdv.lieu_ou_lien }}{% endif %}
+            {% if rdv.statut != 'planifie' %}
+                <span class="jours">({{ rdv.get_statut_display }})</span>
+            {% endif %}
+            {% if rdv.notes %}<br><span class="meta">{{ rdv.notes }}</span>{% endif %}
+        </div>
+    {% empty %}
+        <div class="empty">{% trans "Aucun rendez-vous pour ce dossier." %}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if onglet == 'echeances' %}
+<div class="layout">
+    <div class="card">
+        <h2>{% trans "Échéancier" %}</h2>
+        {% for echeance, urgence, jours in echeances %}
+            <div class="item {{ urgence }}">
+                <strong>{{ echeance.type_delai }}</strong> — {{ echeance.date_limite|date:"d/m/Y" }}
+                {% if echeance.statut == 'depasse' %}
+                    <span class="badge">{% trans "DÉPASSÉE" %}</span>
+                {% else %}
+                    <span class="jours">{% blocktrans %}J-{{ jours }}{% endblocktrans %}</span>
+                {% endif %}
+                {% if echeance.description %}<br><span class="meta">{{ echeance.description }}</span>{% endif %}
+            </div>
+        {% empty %}
+            <div class="empty">{% trans "Aucune échéance pour ce dossier." %}</div>
+        {% endfor %}
+    </div>
+    <div class="col-droite">
+        <div class="card">
+            <h2>{% trans "Ajouter une échéance" %}</h2>
+            <form method="post" action="{% url 'ajouter_echeance' dossier.id %}{% if source %}?source={{ source }}{% endif %}">
+                {% csrf_token %}
+                {% for field in echeance_form %}
+                    <div class="champ">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="btn" type="submit">{% trans "Ajouter" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if onglet == 'facturation' %}
+<div class="grille-totaux">
+    <div class="carte-total">
+        <div class="libelle">{% trans "Temps facturé" %}</div>
+        <div class="valeur">{{ total_minutes }} {% trans "min" %}</div>
+    </div>
+    <div class="carte-total">
+        <div class="libelle">{% trans "Montant total" %}</div>
+        <div class="valeur montant-total">{{ total_montant }} $</div>
+    </div>
+    <div class="carte-total">
+        <div class="libelle">{% trans "Taux horaire" %}</div>
+        <div class="valeur">{{ taux }} $/h</div>
+    </div>
+</div>
+
+<div class="layout">
+    <div class="card">
+        <h2>{% trans "Entrées de temps" %}</h2>
+        {% for entree in entrees_temps %}
+            <div class="item">
+                <strong>{{ entree.date|date:"d/m/Y" }} — {{ entree.duree_formatee }}</strong>
+                {% if entree.non_facturable %}
+                    <span class="badge">{% trans "Non facturable" %}</span>
+                {% endif %}
+                <span class="jours">{{ entree.get_categorie_activite_display }}</span><br>
+                <span class="meta">{{ entree.description|default:"" }}</span>
+                <span class="jours">{{ entree.montant }} $</span>
+            </div>
+        {% empty %}
+            <div class="empty">{% trans "Aucune entrée de temps pour ce dossier." %}</div>
+        {% endfor %}
+        <p style="margin:16px 0 0;">
+            <a class="btn" href="{% url 'exporter_etat_compte' dossier.id %}">⬇️ {% trans "Exporter l'état de compte (PDF)" %}</a>
+        </p>
+    </div>
+    <div class="col-droite">
+        <div class="card">
+            <h2>{% trans "Ajouter une entrée de temps" %}</h2>
+            <form method="post" action="{% url 'ajouter_entree_temps' dossier.id %}{% if source %}?source={{ source }}{% endif %}">
+                {% csrf_token %}
+                {% for field in entree_temps_ajout_form %}
+                    <div class="champ">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="btn" type="submit">{% trans "Enregistrer" %}</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div id="modale-arret" class="modale-arriere">
+    <div class="modale-carte">
+        <h2>⏱️ {% trans "Arrêter le chrono" %}</h2>
+        <div class="bandeau-alerte">⚠️ {% trans "Temps écoulé sur cette session :" %} <strong id="temps-ecoule">--:--:--</strong></div>
+        <form method="post" action="{% url 'arreter_chrono' dossier.id %}{% if source %}?source={{ source }}{% endif %}">
+            {% csrf_token %}
+            {% for field in entree_temps_form %}
+                {% if field.name == 'duree_minutes' %}
+                    <div class="champ">
+                        {{ field.label_tag }}
+                        <input type="number" name="{{ field.html_name }}" id="champ-duree" min="1" value="{{ field.value|default:'1' }}">
+                        {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+                    </div>
+                {% else %}
+                    <div class="champ">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+            <div class="ligne-boutons">
+                <button class="btn-secondaire" type="button" onclick="fermerModale()">{% trans "Annuler" %}</button>
+                <button class="btn" type="submit">{% trans "Arrêter et enregistrer" %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    var modale = document.getElementById('modale-arret');
+    var chronoDebut = {% if session_chrono %}new Date("{{ session_chrono.debut|date:'c' }}").getTime(){% else %}null{% endif %};
+
+    function secondesEcoulees() {
+        if (chronoDebut === null) return 0;
+        return Math.max(Math.floor((Date.now() - chronoDebut) / 1000), 0);
+    }
+
+    function ouvrirModale() {
+        var s = secondesEcoulees();
+        var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+        document.getElementById('temps-ecoule').textContent =
+            (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+        var duree = document.getElementById('champ-duree');
+        if (duree) duree.value = Math.max(Math.ceil(s / 60), 1);
+        modale.classList.add('visible');
+    }
+
+    function fermerModale() {
+        modale.classList.remove('visible');
+    }
+
+    modale.addEventListener('click', function (e) {
+        if (e.target === modale) fermerModale();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') fermerModale();
+    });
+</script>
+
+{% if source == 'clients' %}
+<p><a class="retour" href="{% url 'fiche_client' dossier.client.id %}">‹ {% trans "Retour au client" %}</a></p>
+{% else %}
+<p><a class="retour" href="{% url 'liste_dossiers' %}">‹ {% trans "Retour à la liste des dossiers" %}</a></p>
+{% endif %}
+{% endblock %}

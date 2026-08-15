@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Réviser le document" %}{% endblock %}
+{% block page_title %}{% trans "Réviser le document" %}{% endblock %}
+
+{% block content %}
+<style>
+    .rev-en-tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .badge-statut { padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; }
+    .badge-statut.brouillon { background: var(--line); color: var(--muted); }
+    .badge-statut.valide { background: var(--vert-bg); color: var(--vert-border); }
+    .badge-statut.rejete { background: var(--rouge-bg); color: var(--rouge-border); }
+    .badge-statut.envoye { background: var(--orange-bg); color: var(--orange-border); }
+    .rev-form textarea {
+        width: 100%; min-height: 480px; background: var(--focus-bg); color: var(--text);
+        border: 1px solid var(--focus-border); border-radius: 4px; padding: 12px;
+        font-size: 14px; font-family: Arial, sans-serif; line-height: 1.7; box-sizing: border-box;
+    }
+    .rev-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    .btn-danger { background: var(--rouge-border); color: #FFFFFF; }
+    .btn-danger:hover { background: var(--rouge-bg); color: var(--rouge-border); }
+    .journal { margin-top: 24px; }
+    .journal .item { display: flex; justify-content: space-between; gap: 12px; }
+</style>
+
+<div class="rev-en-tete">
+    <div>
+        <a class="retour" href="{% url 'liste_documents_generes' %}">← {% trans "Retour" %}</a>
+        <h2 style="margin: 8px 0 4px;">{{ doc.get_type_document_display }} — {{ doc.dossier.titre }}</h2>
+        <span class="badge-statut {{ doc.statut }}">{{ doc.get_statut_display }}</span>
+        <span class="meta" style="margin-left:10px;">{% trans "Généré le" %} {{ doc.date_generation|date:"d/m/Y H:i" }}</span>
+        {% if doc.statut == 'valide' %}
+            <span class="meta"> — {% trans "Validé par" %} {{ doc.valide_par.get_full_name|default:doc.valide_par.username }} le {{ doc.date_validation|date:"d/m/Y H:i" }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<form class="card rev-form" method="post" action="{% url 'reviser_document' doc.pk %}">
+    {% csrf_token %}
+    <textarea name="contenu" id="contenu">{{ doc.contenu_brouillon }}</textarea>
+    <div class="rev-actions">
+        <button class="btn" type="submit" name="action" value="enregistrer">{% trans "Enregistrer" %}</button>
+        {% if doc.statut != 'envoye' %}
+            <button class="btn" type="submit" name="action" value="valider">{% trans "Valider" %}</button>
+            <button class="btn btn-danger" type="submit" name="action" value="rejeter">{% trans "Rejeter et regénérer" %}</button>
+        {% endif %}
+        {% if doc.statut == 'valide' %}
+            <a class="btn" href="{% url 'exporter_document' doc.pk 'docx' %}">{% trans "Télécharger .docx" %}</a>
+            <a class="btn" href="{% url 'exporter_document' doc.pk 'pdf' %}">{% trans "Télécharger .pdf" %}</a>
+        {% endif %}
+    </div>
+</form>
+
+<div class="card journal">
+    <h2>{% trans "Journal" %}</h2>
+    {% for entree in doc.journal.all %}
+        <div class="item">
+            <span>{{ entree.get_action_display }}{% if entree.details %} — {{ entree.details }}{% endif %}</span>
+            <span class="meta">{{ entree.date|date:"d/m/Y H:i" }} — {{ entree.utilisateur.username|default:"—" }}</span>
+        </div>
+    {% empty %}
+        <p class="empty">{% trans "Aucune entrée." %}</p>
+    {% endfor %}
+</div>
+{% endblock %}

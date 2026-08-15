@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Documents générés" %}{% endblock %}
+{% block page_title %}{% trans "Documents générés" %}{% endblock %}
+
+{% block content %}
+<style>
+    .gen-tete { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .gen-sous-titre { color: var(--text-disabled); font-size: 13px; margin: 0; }
+    .badge-statut { padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; }
+    .badge-statut.brouillon { background: var(--line); color: var(--muted); }
+    .badge-statut.valide { background: var(--vert-bg); color: var(--vert-border); }
+    .badge-statut.rejete { background: var(--rouge-bg); color: var(--rouge-border); }
+    .badge-statut.envoye { background: var(--orange-bg); color: var(--orange-border); }
+    .etat-vide { text-align: center; padding: 60px 20px; background: var(--card-bg); border: 1px dashed var(--border); border-radius: 6px; }
+    .etat-vide .icone { font-size: 40px; margin-bottom: 12px; }
+</style>
+
+<div class="gen-tete">
+    <p class="gen-sous-titre">{% trans "Mises en demeure générées par l'IA, à valider avant tout envoi" %}</p>
+    <a class="btn" href="{% url 'generer_document' %}">{% trans "Nouvelle génération" %}</a>
+</div>
+
+{% if documents %}
+<table>
+    <thead>
+        <tr>
+            <th>{% trans "Document" %}</th>
+            <th>{% trans "Dossier" %}</th>
+            <th>{% trans "Statut" %}</th>
+            <th>{% trans "Généré le" %}</th>
+            <th>{% trans "Validé par" %}</th>
+            <th>{% trans "Action" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in documents %}
+        <tr>
+            <td><a class="lien-dossier" href="{% url 'reviser_document' doc.pk %}">{{ doc.get_type_document_display }}</a></td>
+            <td>{{ doc.dossier.titre }}</td>
+            <td><span class="badge-statut {{ doc.statut }}">{{ doc.get_statut_display }}</span></td>
+            <td>{{ doc.date_generation|date:"d/m/Y H:i" }}</td>
+            <td>{% if doc.valide_par %}{{ doc.valide_par.get_full_name|default:doc.valide_par.username }}{% else %}—{% endif %}</td>
+            <td><a class="lien-dossier" href="{% url 'reviser_document' doc.pk %}">{% trans "Réviser" %}</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<div class="pagination">
+    <span class="compteur">{% blocktrans with debut=documents.start_index fin=documents.end_index total=documents.paginator.count %}{{ debut }}-{{ fin }} sur {{ total }}{% endblocktrans %}</span>
+    <a class="pg" href="{% if documents.has_previous %}?page={{ documents.previous_page_number }}{% endif %}" {% if not documents.has_previous %}style="visibility:hidden;"{% endif %}>‹</a>
+    <a class="pg" href="{% if documents.has_next %}?page={{ documents.next_page_number }}{% endif %}" {% if not documents.has_next %}style="visibility:hidden;"{% endif %}>›</a>
+</div>
+{% else %}
+<div class="etat-vide">
+    <div class="icone">📄</div>
+    <p>{% trans "Aucun document généré pour le moment" %}</p>
+    <a class="btn" href="{% url 'generer_document' %}">{% trans "Générer une mise en demeure" %}</a>
+</div>
+{% endif %}
+{% endblock %}

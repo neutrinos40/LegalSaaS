@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ client.nom_complet }}{% endblock %}
+{% block page_title %}{{ client.nom_complet }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="meta">
+        <span class="statut actif">{{ client.get_type_client_display }}</span><br>
+        {% if client.type_client == 'compagnie' %}
+            <strong>{% trans "Raison sociale :" %}</strong> {{ client.raison_sociale }}<br>
+            <strong>{% trans "Numéro d'entreprise (NEQ) :" %}</strong> {{ client.numero_entreprise|default:"—" }}<br>
+            <strong>{% trans "Représentant :" %}</strong> {{ client.nom_representant|default:"—" }}<br>
+        {% else %}
+            <strong>{% trans "Nom complet :" %}</strong> {{ client.nom_complet }}<br>
+        {% endif %}
+        <strong>{% trans "Courriel :" %}</strong> {{ client.email|default:"—" }}<br>
+        <strong>{% trans "Téléphone :" %}</strong> {{ client.telephone|default:"—" }}<br>
+        {% if client.adresse %}<strong>{% trans "Adresse :" %}</strong> {{ client.adresse }}<br>{% endif %}
+        <strong>{% trans "Client depuis :" %}</strong> {{ client.date_creation|date:"d/m/Y" }}
+    </div>
+</div>
+
+<div class="layout">
+    <div class="card">
+        <h2>{% trans "Dossiers du client" %}</h2>
+        {% for dossier in dossiers %}
+            <div class="item">
+                <a class="lien-dossier" href="{% url 'fiche_dossier' dossier.id %}?source=clients">{{ dossier.titre }}</a>
+                <span class="statut {{ dossier.statut }}">{{ dossier.get_statut_display }}</span>
+            </div>
+        {% empty %}
+            <div class="empty">{% trans "Aucun dossier pour ce client." %}</div>
+        {% endfor %}
+    </div>
+
+    <div class="col-droite">
+        <div class="card">
+            <h2>{% trans "Documents du client" %}</h2>
+            {% for doc in documents %}
+                <div class="item">
+                    <strong>
+                        {% if doc.type_fichier == 'pdf' %}📄
+                        {% elif doc.type_fichier == 'docx' %}📝
+                        {% else %}🖼️{% endif %}
+                        {{ doc.nom_original|truncatechars:35 }}
+                    </strong>
+                    {% if doc.dossier %}<span class="meta">{{ doc.dossier.titre|truncatechars:25 }}</span>{% endif %}
+                </div>
+            {% empty %}
+                <div class="empty">{% trans "Aucun document pour ce client." %}</div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<p><a class="retour" href="{% url 'liste_clients' %}">‹ {% trans "Retour aux clients" %}</a></p>
+{% endblock %}

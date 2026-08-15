@@ -1,0 +1,303 @@
+
+{% load i18n %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+<style>
+  .cal-main {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px);
+    min-height: 600px;
+  }
+  .cal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .cal-header-left { display: flex; align-items: center; gap: 12px; }
+  .cal-header-right { display: flex; align-items: center; gap: 6px; }
+  .cal-title {
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text);
+    margin: 0 12px 0 0;
+    min-width: 200px;
+  }
+  .cal-nav-btn {
+    background: transparent;
+    border: 1px solid var(--focus-border);
+    color: var(--text);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .cal-nav-btn:hover { background: var(--hover-bg); }
+  .cal-today-btn {
+    background: transparent;
+    border: 1px solid var(--focus-border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .cal-today-btn:hover { background: var(--hover-bg); }
+  .cal-view-btn {
+    background: transparent;
+    border: 1px solid var(--focus-border);
+    color: var(--text);
+    padding: 6px 14px;
+    font-size: 13px;
+    cursor: pointer;
+    border-right: none;
+  }
+  .cal-view-btn:last-child { border-right: 1px solid var(--focus-border); }
+  .cal-view-btn.active {
+    background: var(--gold-strong);
+    color: white;
+    border-color: var(--gold-strong);
+  }
+  .cal-views { display: flex; }
+  #calendar { flex: 1; }
+  .fc {
+    --fc-border-color: var(--line);
+    --fc-page-bg-color: var(--card);
+    --fc-neutral-bg-color: var(--hover-bg);
+    --fc-list-event-hover-bg-color: var(--hover-bg);
+    --fc-today-bg-color: rgba(26, 115, 232, 0.08);
+    --fc-now-indicator-color: #ea4335;
+    font-family: inherit;
+  }
+  .fc .fc-toolbar.fc-header-toolbar { display: none; }
+  .fc th { font-weight: 500; font-size: 11px; text-transform: uppercase; color: var(--muted); padding: 8px 0; }
+  .fc-col-header-cell-cushion { padding: 8px 4px; color: var(--muted); }
+  .fc-daygrid-day-number { color: var(--text); font-size: 12px; padding: 6px 8px; }
+  .fc-day-today .fc-daygrid-day-number { color: var(--gold-strong); font-weight: 700; }
+  .fc-event {
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 2px 6px;
+    font-size: 12px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    cursor: pointer;
+  }
+  .fc-timegrid-now-indicator-line { border-color: #ea4335; border-width: 2px; }
+  .fc-event.echeance { background: #ea4335 !important; color: white; }
+  .fc-event.r { background: #1a73e8 !important; color: white; }
+  .fc-event.complete { background: #1e8e3e !important; }
+  .fc-event.annule { background: #5f6368 !important; text-decoration: line-through; opacity: 0.7; }
+  .fc-event.fc-hidden { display: none !important; }
+  .cal-modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    display: none; align-items: center; justify-content: center; z-index: 9999;
+  }
+  .cal-modal-backdrop.active { display: flex; }
+  .cal-modal {
+    background: var(--card); border-radius: 8px; padding: 24px;
+    max-width: 420px; width: 90%;
+  }
+  .cal-modal h3 { margin-top: 0; color: var(--gold); }
+  .cal-modal-close {
+    float: right; background: none; border: none; font-size: 20px;
+    cursor: pointer; color: var(--muted);
+  }
+  .cal-modal dt { font-weight: 600; color: var(--muted); font-size: 12px; margin-top: 10px; }
+  .cal-modal dd { margin: 4px 0 0 0; color: var(--text); }
+  .cal-modal .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 3px;
+    font-size: 11px; font-weight: 600; color: white;
+  }
+  .cal-filters {
+    display: flex;
+    gap: 10px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+  }
+  .cal-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border: 1px solid var(--focus-border);
+    border-radius: 20px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--text);
+    background: var(--card);
+  }
+  .cal-filter-pill.active { opacity: 1; }
+  .cal-filter-pill.inactive { opacity: 0.4; }
+  .cal-filter-pill .swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cal-main">
+  <div class="cal-header">
+    <div class="cal-header-left">
+      <button class="cal-nav-btn" id="prevBtn">‹</button>
+      <button class="cal-nav-btn" id="nextBtn">›</button>
+      <button class="cal-today-btn" id="todayBtn">{% trans "Aujourd'hui" %}</button>
+      <h2 class="cal-title" id="calTitle">{% trans "Chargement…" %}</h2>
+    </div>
+    <div class="cal-header-right">
+      <div class="cal-views">
+        <button class="cal-view-btn" data-view="dayGridMonth">{% trans "Mois" %}</button>
+        <button class="cal-view-btn" data-view="timeGridWeek">{% trans "Semaine" %}</button>
+        <button class="cal-view-btn" data-view="timeGridDay">{% trans "Jour" %}</button>
+        <button class="cal-view-btn" data-view="listMonth">{% trans "Agenda" %}</button>
+      </div>
+    </div>
+  </div>
+  <div class="cal-filters">
+    <span class="cal-filter-pill active" data-filter="echeance">
+      <span class="swatch" style="background:#ea4335"></span>{% trans "Échéances" %}
+    </span>
+    <span class="cal-filter-pill active" data-filter="r">
+      <span class="swatch" style="background:#1a73e8"></span>{% trans "Rendez-vous" %}
+    </span>
+  </div>
+  <div id="calendar"></div>
+</div>
+
+<div class="cal-modal-backdrop" id="calModal" onclick="if(event.target===this) this.classList.remove('active')">
+  <div class="cal-modal">
+    <button class="cal-modal-close" onclick="document.getElementById('calModal').classList.remove('active')">✕</button>
+    <h3 id="modalTitle"></h3>
+    <dl id="modalBody"></dl>
+    <div style="margin-top:18px; text-align:right;">
+      <button class="btn" onclick="document.getElementById('calModal').classList.remove('active')">{% trans "Fermer" %}</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const calendarEl = document.getElementById('calendar');
+  let activeFilters = new Set(['echeance', 'r']);
+
+  const calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    locale: 'fr',
+    firstDay: 1,
+    height: '100%',
+    slotMinTime: '07:00',
+    slotMaxTime: '20:00',
+    nowIndicator: true,
+    dayMaxEvents: 3,
+    expandRows: true,
+    headerToolbar: false,
+    events: function(fetchInfo, success, failure) {
+      fetch("{% url 'api_evenements' %}?start=" + fetchInfo.startStr + "&end=" + fetchInfo.endStr)
+        .then(r => r.ok ? r.json() : Promise.reject(r.status))
+        .then(data => success(data))
+        .catch(e => { console.error(e); failure(e); });
+    },
+    eventClassNames: function(arg) {
+      const props = arg.event.extendedProps || {};
+      const type = props.type === 'echeance' ? 'echeance' : 'r';
+      const hidden = !activeFilters.has(type);
+      return [type, props.statut].filter(Boolean).concat(hidden ? ['fc-hidden'] : []);
+    },
+    eventClick: function(info) { info.jsEvent.preventDefault(); showModal(info.event); },
+    eventDidMount: function(info) { info.el.title = info.event.title; },
+    datesSet: function(info) {
+      const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+      const d = info.start;
+      const month = months[d.getMonth()];
+      let title = '';
+      if (info.view.type === 'dayGridMonth') title = month.charAt(0).toUpperCase() + month.slice(1) + ' ' + d.getFullYear();
+      else if (info.view.type === 'timeGridWeek') {
+        const end = new Date(info.end); end.setDate(end.getDate() - 1);
+        title = d.getDate() + ' – ' + end.getDate() + ' ' + month + ' ' + d.getFullYear();
+      }
+      else if (info.view.type === 'timeGridDay') title = d.getDate() + ' ' + month + ' ' + d.getFullYear();
+      document.getElementById('calTitle').textContent = title;
+    }
+  });
+  calendar.render();
+
+  document.getElementById('prevBtn').onclick = () => calendar.prev();
+  document.getElementById('nextBtn').onclick = () => calendar.next();
+  document.getElementById('todayBtn').onclick = () => calendar.today();
+
+  document.querySelectorAll('.cal-view-btn').forEach(btn => {
+    btn.onclick = () => { calendar.changeView(btn.dataset.view); setActiveView(btn.dataset.view); };
+  });
+  function setActiveView(v) {
+    document.querySelectorAll('.cal-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  }
+  setActiveView('dayGridMonth');
+
+  document.querySelectorAll('.cal-filter-pill').forEach(pill => {
+    pill.onclick = () => {
+      const f = pill.dataset.filter;
+      if (activeFilters.has(f)) activeFilters.delete(f);
+      else activeFilters.add(f);
+      pill.classList.toggle('active', activeFilters.has(f));
+      pill.classList.toggle('inactive', !activeFilters.has(f));
+      calendar.refetchEvents();
+    };
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft') calendar.prev();
+    if (e.key === 'ArrowRight') calendar.next();
+    if (e.key === 't') calendar.today();
+  });
+});
+
+function showModal(event) {
+  const p = event.extendedProps || {};
+  const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const fmt = d => d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() + ' à ' + d.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+
+  document.getElementById('modalTitle').innerHTML = event.title || '—';
+  let html = '';
+  if (p.type === 'echeance') {
+    html += '<dt>Type</dt><dd><span class="badge" style="background:#ea4335">Échéance</span></dd>';
+    html += '<dt>Délai</dt><dd>' + (p.type_delai || '—') + '</dd>';
+    html += '<dt>Dossier</dt><dd>' + (p.dossier || '—') + '</dd>';
+    html += '<dt>Statut</dt><dd><span class="badge" style="background:' + (p.statut === 'depasse' ? '#ea4335' : p.statut === 'respecte' ? '#1e8e3e' : '#fbbc04') + '">' + (p.statut_label || '') + '</span></dd>';
+    if (p.description) html += '<dt>Description</dt><dd>' + p.description + '</dd>';
+  } else {
+    html += '<dt>Type</dt><dd><span class="badge" style="background:#1a73e8">Rendez-vous</span></dd>';
+    if (p.client) html += '<dt>Client</dt><dd>' + p.client + '</dd>';
+    if (p.mode) html += '<dt>Mode</dt><dd>' + p.mode + '</dd>';
+    if (p.lieu_ou_lien) html += '<dt>Lieu / Lien</dt><dd>' + p.lieu_ou_lien + '</dd>';
+    html += '<dt>Statut</dt><dd><span class="badge" style="background:' + (p.statut === 'complete' ? '#1e8e3e' : p.statut === 'annule' ? '#5f6368' : '#1a73e8') + '">' + (p.statut_label || '') + '</span></dd>';
+    if (p.notes) html += '<dt>Notes</dt><dd>' + p.notes + '</dd>';
+  }
+  if (event.start) html += '<dt>Début</dt><dd>' + fmt(event.start) + '</dd>';
+  if (event.end) html += '<dt>Fin</dt><dd>' + fmt(event.end) + '</dd>';
+  if (event.url) html += '<dt style="margin-top:14px;"></dt><dd><a href="' + event.url + '" class="btn" target="_blank">Ouvrir le dossier</a></dd>';
+
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('calModal').classList.add('active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Clients" %}{% endblock %}
+{% block page_title %}{% trans "Clients" %}{% endblock %}
+
+{% block content %}
+<style>
+    .clients-tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .form-ajout { max-width: 480px; margin-bottom: 24px; }
+    .form-ajout select, .form-ajout textarea {
+        background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+        padding: 8px 10px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; width: 100%;
+    }
+    .form-filtres input { min-width: 260px; }
+</style>
+
+<div class="clients-tete">
+    <div>
+        <p style="color: var(--text-disabled); font-size: 13px; margin: 0 0 10px;">{% trans "Recherchez un client par nom ou ajoutez-en un nouveau" %}</p>
+    </div>
+</div>
+
+<div class="form-filtres">
+    <form method="get" action="{% url 'liste_clients' %}" style="display:contents;">
+        <input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Rechercher un client par nom…' %}">
+        <button class="btn" type="submit">{% trans "Rechercher" %}</button>
+    </form>
+</div>
+
+<div class="docs-tete" style="display:flex; justify-content:flex-end; margin-bottom:16px;">
+    <details class="docs-dropdown" style="position:relative;">
+        <summary class="btn" style="cursor:pointer; list-style:none;">+ {% trans "Ajouter un client" %}</summary>
+        <div class="panel" style="position:absolute; top:calc(100% + 4px); right:0; z-index:10; min-width:340px; background:var(--card-bg); border:1px solid var(--border); border-radius:6px; padding:16px;">
+            <form method="post" action="{% url 'liste_clients' %}">
+                {% csrf_token %}
+                {% for field in form %}
+                    <div class="champ
+                        {% if field.name == 'prenom' or field.name == 'nom' %} champ-individu{% endif %}
+                        {% if field.name == 'raison_sociale' or field.name == 'numero_entreprise' or field.name == 'nom_representant' %} champ-compagnie{% endif %}">
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+                    </div>
+                {% endfor %}
+                <button class="btn" type="submit">{% trans "Enregistrer le client" %}</button>
+            </form>
+        </div>
+    </details>
+</div>
+
+<script>
+    function basculerTypeClient() {
+        var type = document.getElementById('id_type_client');
+        if (!type) return;
+        var individu = type.value === 'individu';
+        document.querySelectorAll('.champ-individu').forEach(function (el) { el.style.display = individu ? '' : 'none'; });
+        document.querySelectorAll('.champ-compagnie').forEach(function (el) { el.style.display = individu ? 'none' : ''; });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        var sel = document.getElementById('id_type_client');
+        if (sel) {
+            sel.addEventListener('change', basculerTypeClient);
+            basculerTypeClient();
+        }
+    });
+</script>
+
+{% if clients %}
+<table>
+    <thead>
+        <tr>
+            <th>{% trans "Nom" %}</th>
+            <th>{% trans "Type" %}</th>
+            <th>{% trans "Courriel" %}</th>
+            <th>{% trans "Téléphone" %}</th>
+            <th>{% trans "Dossiers" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for client in clients %}
+        <tr>
+            <td><a class="lien-dossier" href="{% url 'fiche_client' client.id %}">{{ client.nom_complet }}</a></td>
+            <td>{{ client.get_type_client_display }}</td>
+            <td>{{ client.email|default:"—" }}</td>
+            <td>{{ client.telephone|default:"—" }}</td>
+            <td>{{ client.nb_dossiers }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="etat-vide" style="text-align:center; padding:60px 20px; background:var(--card-bg); border:1px dashed var(--border); border-radius:6px;">
+    <div class="icone" style="font-size:40px; margin-bottom:12px;">👤</div>
+    <p style="color: var(--text-disabled); font-size:14px; margin-bottom:16px;">{% trans "Aucun client trouvé" %}</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Facturation" %}{% endblock %}
+{% block page_title %}{% trans "Facturation" %}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2>{% trans "Nouvelle prestation" %}</h2>
+  <p class="facture-sub">{% trans "Ajoute le temps passé sur un dossier, puis clique « Générer la facture » pour le facturer au client." %}</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" name="prestation" class="btn-facturer">{% trans "Ajouter la prestation" %}</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>{% trans "Mon abonnement" %}</h2>
+  <div class="meta">
+    <strong>{% trans "Plan" %} :</strong> {{ abonnement.nom_plan }}<br>
+    <strong>{% trans "Prix mensuel" %} :</strong> {{ abonnement.prix_mensuel }} $<br>
+    <strong>{% trans "Quota IA" %} :</strong> {{ abonnement.quota_mensuel }}<br>
+    <strong>{% trans "Appels IA ce mois" %} :</strong> {{ nb_appels_ia }}<br>
+    <strong>{% trans "Quota restant" %} :</strong> {{ quota_restant }}
+  </div>
+</div>
+
+{% for f in factures_par_client %}
+  <div class="facture-doc">
+    <div class="facture-head">
+      <div>
+        <div class="facture-logo">Cabinet {{ request.user.get_full_name|default:request.user.username }}</div>
+        <div class="facture-sub">{% trans "Avocat" %} — {{ request.user.email }}</div>
+      </div>
+      <div class="facture-titre">
+        <h2>{% trans "FACTURE" %}</h2>
+        <div>{% trans "Client" %} : <strong>{{ f.client.nom_complet }}</strong></div>
+        {% for d in f.dossiers %}
+          <div>{% trans "Dossier" %} : <strong>N° {{ d.id }}</strong> — {{ d.titre }}</div>
+        {% endfor %}
+        <div>{% trans "Date" %} : {{ today|date:"d/m/Y" }}</div>
+      </div>
+    </div>
+    <table class="facture-table">
+      <thead><tr><th>{% trans "Date" %}</th><th>{% trans "Dossier" %}</th><th>{% trans "Prestation" %}</th><th>{% trans "Durée" %}</th><th>{% trans "Montant" %}</th></tr></thead>
+      <tbody>
+      {% for e in f.lignes %}
+        <tr>
+          <td>{{ e.date|date:"d/m/Y" }}</td>
+          <td>{{ e.dossier.titre }}</td>
+          <td>{{ e.description|default:"—" }}</td>
+          <td>{{ e.duree_formatee }}</td>
+          <td class="montant">{{ e.montant }} $</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr><td colspan="4" class="total-label">{% trans "Total" %}</td><td class="montant total">{{ f.total }} $</td></tr>
+      </tfoot>
+    </table>
+    <form method="post" action="{% url 'generer_facture_client' f.client.id %}" style="margin-top:10px;">
+      {% csrf_token %}
+      <button type="submit" class="btn-facturer">{% trans "Générer la facture" %}</button>
+    </form>
+
+
+
+  </div>
+{% empty %}
+  <div class="card"><p class="empty">{% trans "Aucune entrée de temps à facturer." %}</p></div>
+{% endfor %}
+
+<div class="card">
+  <h2>{% trans "Factures enregistrées" %}</h2>
+  {% if factures %}
+    <table>
+      <thead><tr><th>{% trans "Client" %}</th><th>{% trans "Mois" %}</th><th>{% trans "Montant" %}</th><th>{% trans "Statut" %}</th></tr></thead>
+      <tbody>
+      {% for f in factures %}
+        <tr><td>{{ f.client.nom_complet|default:"—" }}</td><td>{{ f.mois }}</td><td>{{ f.montant }} $</td><td>{{ f.get_statut_display }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty">{% trans "Aucune facture enregistrée." %}</p>
+  {% endif %}
+</div>
+
+{% endblock %}

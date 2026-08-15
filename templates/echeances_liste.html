@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Échéances" %}{% endblock %}
+{% block page_title %}{% trans "Mes échéances" %}{% endblock %}
+
+{% block content %}
+<table>
+    <thead>
+        <tr>
+            <th>{% trans "Dossier" %}</th>
+            <th>{% trans "Type de délai" %}</th>
+            <th>{% trans "Date limite" %}</th>
+            <th>{% trans "Statut" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for echeance in echeances %}
+        <tr>
+            <td><a class="lien-dossier" href="{% url 'fiche_dossier' echeance.dossier.id %}">{{ echeance.dossier.titre }}</a></td>
+            <td>{{ echeance.type_delai }}</td>
+            <td>{{ echeance.date_limite }}</td>
+            <td>{{ echeance.get_statut_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="aucun">{% trans "Aucune échéance pour le moment." %}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

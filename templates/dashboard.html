@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Tableau de bord" %}{% endblock %}
+{% block page_title %}{% blocktrans with username=request.user.username %}Bonjour, {{ username }}{% endblocktrans %}{% endblock %}
+
+{% block content %}
+<style>
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; text-decoration: none; transition: transform .15s, box-shadow .15s; display: block; }
+  .kpi:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.10); border-color: #2F9E63; }
+  .kpi-num { display: block; font-size: 28px; font-weight: 700; color: #2F9E63; }
+  .kpi-label { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  @media (max-width: 800px) { .charts { grid-template-columns: 1fr; } }
+  .charts .card canvas { max-height: 240px; }
+  .kpi-payee { border-top: 3px solid #2F9E63; }
+  .kpi-impayee { border-top: 3px solid #dc3545; }
+  .kpi-brouillon { border-top: 3px solid #9ca3af; }
+  .dashboard-tabs { display: flex; gap: 10px; margin-bottom: 18px; }
+  .tab-btn { padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; background: var(--card); border: 1px solid var(--border); color: var(--text); }
+  .tab-btn:hover { border-color: #2F9E63; }
+  .tab-btn.actif { background: #2F9E63; color: #FFFFFF; border-color: #2F9E63; }
+</style>
+
+<div class="dashboard-tabs">
+  <a href="{% url 'dashboard' %}" class="tab-btn {% if actif != 'revenus' %}actif{% endif %}">{% trans "Gestion des clients" %}</a>
+  <a href="{% url 'dashboard' %}?actif=revenus" class="tab-btn {% if actif == 'revenus' %}actif{% endif %}">{% trans "Mes revenus" %}</a>
+</div>
+
+{% if actif == 'calendrier' %}
+  {% include "dashboard_calendrier.html" %}
+{% elif actif == 'revenus' %}
+  <div class="kpi-grid">
+    <a class="kpi kpi-payee" href="{% url 'liste_facturation' %}">
+      <span class="kpi-num">{{ nb_payees }} <small>({{ total_payees }} $)</small></span>
+      <span class="kpi-label">{% trans "Factures payées" %}</span>
+    </a>
+    <a class="kpi kpi-impayee" href="{% url 'liste_facturation' %}">
+      <span class="kpi-num">{{ nb_impayees }} <small>({{ total_impayees }} $)</small></span>
+      <span class="kpi-label">{% trans "Factures impayées" %}</span>
+    </a>
+    <a class="kpi kpi-brouillon" href="{% url 'liste_facturation' %}">
+      <span class="kpi-num">{{ nb_brouillons }} <small>({{ total_brouillons }} $)</small></span>
+      <span class="kpi-label">{% trans "Factures brouillon" %}</span>
+    </a>
+  </div>
+
+  <div class="charts">
+    <div class="card">
+      <h2>{% trans "Revenus par mois" %}</h2>
+      <canvas id="chartRevenus"></canvas>
+    </div>
+    <div class="card">
+      <h2>{% trans "Répartition des factures" %}</h2>
+      <canvas id="chartRepartition"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>{% trans "Factures payées" %}</h2>
+    {% if factures_payees %}
+      <table>
+        <thead><tr><th>{% trans "Client" %}</th><th>{% trans "Mois" %}</th><th>{% trans "Montant" %}</th></tr></thead>
+        <tbody>
+        {% for f in factures_payees %}
+          <tr><td>{{ f.client.nom_complet|default:"—" }}</td><td>{{ f.mois }}</td><td>{{ f.montant }} $</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">{% trans "Aucune facture payée." %}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>{% trans "Factures impayées" %}</h2>
+    {% if factures_impayees %}
+      <table>
+        <thead><tr><th>{% trans "Client" %}</th><th>{% trans "Mois" %}</th><th>{% trans "Montant" %}</th></tr></thead>
+        <tbody>
+        {% for f in factures_impayees %}
+          <tr><td>{{ f.client.nom_complet|default:"—" }}</td><td>{{ f.mois }}</td><td>{{ f.montant }} $</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">{% trans "Aucune facture impayée." %}</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>{% trans "Factures en brouillon" %}</h2>
+    {% if factures_brouillon %}
+      <table>
+        <thead><tr><th>{% trans "Client" %}</th><th>{% trans "Mois" %}</th><th>{% trans "Montant" %}</th></tr></thead>
+        <tbody>
+        {% for f in factures_brouillon %}
+          <tr><td>{{ f.client.nom_complet|default:"—" }}</td><td>{{ f.mois }}</td><td>{{ f.montant }} $</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty">{% trans "Aucune facture en brouillon." %}</p>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="kpi-grid">
+    <a class="kpi" href="{% url 'liste_clients' %}"><span class="kpi-num">{{ nb_clients }}</span><span class="kpi-label">{% trans "Clients" %}</span></a>
+    <a class="kpi" href="{% url 'liste_dossiers' %}"><span class="kpi-num">{{ nb_dossiers }}</span><span class="kpi-label">{% trans "Dossiers" %}</span></a>
+    <a class="kpi" href="{% url 'liste_echeances' %}"><span class="kpi-num">{{ nb_echeances }}</span><span class="kpi-label">{% trans "Échéances à venir" %}</span></a>
+    <a class="kpi" href="{% url 'liste_rendezvous' %}"><span class="kpi-num">{{ nb_rdv }}</span><span class="kpi-label">{% trans "Rendez-vous" %}</span></a>
+    <a class="kpi" href="{% url 'liste_facturation' %}"><span class="kpi-num">{{ revenus_mois }} $</span><span class="kpi-label">{% trans "Facturé ce mois" %}</span></a>
+    <a class="kpi" href="{% url 'liste_facturation' %}"><span class="kpi-num">{{ nb_impayees }}</span><span class="kpi-label">{% trans "Factures impayées" %}</span></a>
+  </div>
+
+  <div class="charts">
+    <div class="card">
+      <h2>{% trans "Échéances par mois" %}</h2>
+      <canvas id="chartEcheances"></canvas>
+    </div>
+    <div class="card">
+      <h2>{% trans "Statut des dossiers" %}</h2>
+      <canvas id="chartStatuts"></canvas>
+    </div>
+  </div>
+
+  <div class="focus">
+    <a href="{% url 'dashboard' %}?actif=dossiers" class="{% if actif == 'dossiers' %}actif{% endif %}">{% trans "Dossiers" %}</a>
+    <a href="{% url 'dashboard' %}?actif=echeances" class="{% if actif == 'echeances' %}actif{% endif %}">{% trans "Échéances" %}</a>
+    <a href="{% url 'dashboard' %}?actif=rdv" class="{% if actif == 'rdv' %}actif{% endif %}">{% trans "Rendez-vous" %}</a>
+  </div>
+
+  <div class="layout">
+    <div>
+      <div class="card">
+        <h2>{% trans "Mes dossiers" %}</h2>
+        {% if dossiers %}
+          <table>
+            <thead><tr><th>{% trans "Titre" %}</th><th>{% trans "Client" %}</th><th>{% trans "Type" %}</th><th>{% trans "Statut" %}</th></tr></thead>
+            <tbody>
+            {% for dossier in dossiers %}
+              <tr>
+                <td><a class="lien-dossier" href="{% url 'fiche_dossier' dossier.id %}">{{ dossier.titre }}</a></td>
+                <td>{{ dossier.client.nom_complet }}</td>
+                <td>{{ dossier.get_type_procedure_display }}</td>
+                <td><span class="statut {{ dossier.statut }}">{{ dossier.get_statut_display }}</span></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          {% if dossiers.has_other_pages %}
+            <div class="pagination">
+              {% if dossiers.has_previous %}<a class="pg" href="?actif=dossiers&page_dossiers={{ dossiers.previous_page_number }}">{% trans "Précédent" %}</a>{% endif %}
+              <span class="compteur">{% blocktrans with current=dossiers.number total=dossiers.paginator.num_pages %}Page {{ current }} / {{ total }}{% endblocktrans %}</span>
+              {% if dossiers.has_next %}<a class="pg" href="?actif=dossiers&page_dossiers={{ dossiers.next_page_number }}">{% trans "Suivant" %}</a>{% endif %}
+            </div>
+          {% endif %}
+        {% else %}
+          <p class="empty">{% trans "Aucun dossier." %}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="col-droite">
+      <div class="card">
+        <h2>{% trans "Rendez-vous à venir" %}</h2>
+        {% if rendez_vous %}
+          {% for rdv in rendez_vous %}
+            <div class="item">
+              <strong>{{ rdv.client.nom_complet }}</strong>
+              <div class="meta">
+                <strong>{% trans "Date" %} :</strong> {{ rdv.date_heure|date:"d/m/Y H:i" }}<br>
+                <strong>{% trans "Mode" %} :</strong> {{ rdv.get_mode_display }}<br>
+                {% if rdv.dossier %}<strong>{% trans "Dossier" %} :</strong> <a class="lien-dossier" href="{% url 'fiche_dossier' rdv.dossier.id %}">{{ rdv.dossier.titre }}</a>{% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="empty">{% trans "Aucun rendez-vous planifié." %}</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const moisLabels = {{ mois_labels|safe }};
+  const moisCounts = {{ mois_counts|safe }};
+  const statutLabels = {{ statut_labels|safe }};
+  const statutData = {{ statut_data|safe }};
+  const revLabels = {{ rev_labels|safe }};
+  const revPayees = {{ rev_payees|safe }};
+  const revImpayees = {{ rev_impayees|safe }};
+  const revBrouillons = {{ rev_brouillons|safe }};
+
+  if (document.getElementById('chartEcheances') && window.Chart) {
+    new Chart(document.getElementById('chartEcheances'), {
+      type: 'bar',
+      data: {
+        labels: moisLabels,
+        datasets: [{ label: 'Échéances', data: moisCounts, backgroundColor: '#ea4335', borderRadius: 6 }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+  if (document.getElementById('chartStatuts') && window.Chart) {
+    new Chart(document.getElementById('chartStatuts'), {
+      type: 'doughnut',
+      data: {
+        labels: statutLabels,
+        datasets: [{ data: statutData, backgroundColor: ['#2F9E63', '#6b7280', '#f59e0b'] }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+  if (document.getElementById('chartRevenus') && window.Chart) {
+    new Chart(document.getElementById('chartRevenus'), {
+      type: 'bar',
+      data: {
+        labels: revLabels,
+        datasets: [
+          { label: 'Payées', data: revPayees, backgroundColor: '#2F9E63', borderRadius: 4 },
+          { label: 'Impayées', data: revImpayees, backgroundColor: '#dc3545', borderRadius: 4 },
+          { label: 'Brouillons', data: revBrouillons, backgroundColor: '#9ca3af', borderRadius: 4 }
+        ]
+      },
+      options: { scales: { y: { beginAtZero: true } }, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+  if (document.getElementById('chartRepartition') && window.Chart) {
+    new Chart(document.getElementById('chartRepartition'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Payées', 'Impayées', 'Brouillons'],
+        datasets: [{ data: [{{ total_payees }}, {{ total_impayees }}, {{ total_brouillons }}], backgroundColor: ['#2F9E63', '#dc3545', '#9ca3af'] }]
+      },
+      options: { plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+</script>
+{% endblock %}

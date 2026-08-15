@@ -1,0 +1,27 @@
+# Secrets
+.env
+
+# Base de données
+db.sqlite3
+*.sqlite3
+
+# Fichiers uploadés (documents clients)
+media/
+
+# Environnement virtuel
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Fichiers privés du projet
+feuille-de-route-saas-juridique.pdf
+prompt_initial_open_code.txt
+
+# Django
+*.log
+staticfiles/
+locale/

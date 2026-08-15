@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Documents" %}{% endblock %}
+{% block page_title %}{% trans "Documents" %}{% endblock %}
+
+{% block content %}
+<style>
+    .docs-tete { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+    .docs-sous-titre { color: var(--text-disabled); font-size: 13px; margin: 0 0 10px; }
+    .docs-onglets { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+    .docs-onglets a {
+        padding: 8px 18px; font-size: 14px; text-decoration: none; color: var(--text); background: var(--card-bg);
+    }
+    .docs-onglets a.actif { background: var(--gold-strong); color: var(--actif-text); font-weight: bold; }
+
+    .docs-toolbar { display: flex; justify-content: flex-end; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+    .docs-toolbar input[type="text"] {
+        background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+        padding: 8px 10px; border-radius: 4px; font-size: 14px; margin: 0; min-width: 220px;
+    }
+    details.docs-dropdown { position: relative; }
+    details.docs-dropdown summary {
+        cursor: pointer; background: var(--focus-bg); color: var(--text);
+        border: 1px solid var(--focus-border); border-radius: 4px;
+        padding: 8px 12px; font-size: 14px; list-style: none; user-select: none;
+    }
+    details.docs-dropdown[open] summary { border-color: var(--gold-strong); }
+    details.docs-dropdown .panel {
+        position: absolute; top: calc(100% + 4px); right: 0; z-index: 10; min-width: 200px;
+        background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px;
+        padding: 12px; display: grid; gap: 8px;
+    }
+    details.docs-dropdown .panel label { display: flex; gap: 6px; align-items: center; margin: 0; font-size: 13px; color: var(--text); }
+    details.docs-dropdown .panel select { width: 100%; margin: 0; }
+    details.docs-dropdown .panel a { color: var(--gold); text-decoration: none; font-size: 13px; }
+    details.docs-dropdown .panel a:hover { text-decoration: underline; }
+    details.docs-dropdown .panel .inactif { color: var(--text-disabled); cursor: default; }
+    details.docs-nouveau summary {
+        background: var(--gold-strong); color: var(--actif-text); border: 1px solid var(--gold-strong);
+    }
+    details.docs-nouveau[open] summary { background: var(--gold-bright); }
+
+    .docs-table-wrap { overflow-x: auto; }
+    .docs-table-wrap td, .docs-table-wrap th { white-space: nowrap; }
+    .tr-etendu td { padding: 24px 16px; }
+    .icone-type { margin-right: 6px; }
+    .lien-externe { text-decoration: none; margin-left: 6px; font-size: 12px; }
+    .docs-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+    .docs-footer .compteur { color: var(--compteur); font-size: 13px; }
+    .docs-footer label { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--text); }
+    .masquee { display: none; }
+    .etat-vide { text-align: center; padding: 60px 20px; background: var(--card-bg); border: 1px dashed var(--border); border-radius: 6px; }
+    .etat-vide .icone { font-size: 40px; margin-bottom: 12px; }
+    .etat-vide p { color: var(--text-disabled); font-size: 14px; margin-bottom: 16px; }
+    .form-upload { max-width: 480px; margin-bottom: 24px; }
+    .form-upload select, .form-upload textarea {
+        background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+        padding: 8px 10px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; width: 100%;
+    }
+    @media (max-width: 900px) { details.docs-dropdown .panel { position: static; } }
+</style>
+
+<div class="docs-tete">
+    <div>
+        <p class="docs-sous-titre">{% trans "Tous les fichiers et dossiers" %}</p>
+        <div class="docs-onglets">
+            <a href="{% url 'liste_documents' %}" class="actif">{% trans "Tous" %}</a>
+            <a href="{% url 'liste_documents' %}?fichiers=1">{% trans "Fichiers seulement" %}</a>
+        </div>
+    </div>
+    <a class="btn" href="{% url 'reglages' %}">{% trans "Paramètres" %}</a>
+</div>
+
+<div class="docs-toolbar">
+    <form method="get" action="{% url 'liste_documents' %}">
+        <input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Filtrer par mot-clé' %}">
+        <input type="hidden" name="tri" value="{{ tri }}">
+    </form>
+
+    <details class="docs-dropdown">
+        <summary>{% trans "Trier" %}</summary>
+        <div class="panel">
+            <a href="?tri=date&q={{ q }}">{% trans "Date (récent en premier)" %}</a>
+            <a href="?tri=nom&q={{ q }}">{% trans "Nom (A → Z)" %}</a>
+            <a href="?tri=taille&q={{ q }}">{% trans "Taille (plus lourd en premier)" %}</a>
+        </div>
+    </details>
+
+    <details class="docs-dropdown" id="colonnes">
+        <summary>{% trans "Colonnes" %}</summary>
+        <div class="panel">
+            <label><input type="checkbox" checked data-col="action"> {% trans "Action" %}</label>
+            <label><input type="checkbox" checked data-col="heure"> {% trans "Heure d'enregistrement" %}</label>
+            <label><input type="checkbox" checked data-col="dossier"> {% trans "Dossier associé" %}</label>
+            <label><input type="checkbox" checked data-col="categorie"> {% trans "Catégorie" %}</label>
+            <label><input type="checkbox" checked data-col="taille"> {% trans "Taille" %}</label>
+            <label><input type="checkbox" checked data-col="modif"> {% trans "Dernière modification" %}</label>
+            <label><input type="checkbox" checked data-col="reception"> {% trans "Date de réception" %}</label>
+            <label><input type="checkbox" checked data-col="commentaires"> {% trans "Commentaires" %}</label>
+            <label><input type="checkbox" checked data-col="contact"> {% trans "Contact associé" %}</label>
+            <label><input type="checkbox" checked data-col="auteur"> {% trans "Auteur" %}</label>
+        </div>
+    </details>
+
+    <details class="docs-dropdown">
+        <summary>{% trans "Filtres" %}</summary>
+        <form method="get" action="{% url 'liste_documents' %}" style="display:contents;">
+            <div class="panel">
+                <select name="dossier">
+                    <option value="">{% trans "Tous les dossiers" %}</option>
+                    {% for d in dossiers %}
+                        <option value="{{ d.id }}" {% if dossier_id == d.id|stringformat:"s" %}selected{% endif %}>{{ d.titre }}</option>
+                    {% endfor %}
+                </select>
+                <select name="categorie">
+                    <option value="">{% trans "Toutes les catégories" %}</option>
+                    {% for value, label in categories %}
+                        <option value="{{ value }}" {% if categorie == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <select name="type">
+                    <option value="">{% trans "Tous les types" %}</option>
+                    {% for t in types %}
+                        <option value="{{ t }}" {% if type_f == t %}selected{% endif %}>{{ t|upper }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn" type="submit">{% trans "Filtrer" %}</button>
+            </div>
+        </form>
+    </details>
+
+    <details class="docs-dropdown docs-nouveau">
+        <summary>{% trans "Nouveau" %} ▾</summary>
+        <div class="panel">
+            <a href="#" id="lien-upload">{% trans "Téléverser un fichier" %}</a>
+            <span class="inactif">{% trans "Créer un dossier" %} (à venir)</span>
+        </div>
+    </details>
+</div>
+
+<form id="form-upload" method="post" enctype="multipart/form-data" class="card form-upload" hidden>
+    {% csrf_token %}
+    {% for field in form %}
+        <div class="champ">
+            {{ field.label_tag }}
+            {{ field }}
+            {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+        </div>
+    {% endfor %}
+    <button class="btn" type="submit">{% trans "Téléverser" %}</button>
+</form>
+
+{% if documents %}
+<div class="docs-table-wrap">
+<table>
+    <thead>
+        <tr>
+            <th><input type="checkbox" id="cocher-tout"></th>
+            <th data-col="action">{% trans "Action" %}</th>
+            <th data-col="heure">{% trans "Heure d'enregistrement" %}</th>
+            <th data-col="nom">{% trans "Nom" %}</th>
+            <th data-col="dossier">{% trans "Dossier associé" %}</th>
+            <th data-col="categorie">{% trans "Catégorie" %}</th>
+            <th data-col="taille">{% trans "Taille" %}</th>
+            <th data-col="modif">{% trans "Dernière modification" %}</th>
+            <th data-col="reception">{% trans "Date de réception" %}</th>
+            <th data-col="commentaires">{% trans "Commentaires" %}</th>
+            <th data-col="contact">{% trans "Contact associé" %}</th>
+            <th data-col="auteur">{% trans "Auteur" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in documents %}
+        <tr>
+            <td><input type="checkbox" class="cocher-ligne" value="{{ doc.id }}"></td>
+            <td data-col="action">
+                <details class="docs-dropdown">
+                    <summary>{% trans "Télécharger" %}</summary>
+                    <div class="panel">
+                        {% if doc.type_fichier == 'docx' or doc.type_fichier == 'pdf' or doc.type_fichier == 'txt' %}
+                            <a href="{% url 'analyser_document' doc.id %}">🤖 {% trans "Analyser" %}</a>
+                        {% endif %}
+                        <a href="{{ doc.fichier.url }}">{% trans "Télécharger le fichier" %}</a>
+                        <a href="{{ doc.fichier.url }}" target="_blank">{% trans "Ouvrir" %}</a>
+                    </div>
+                </details>
+            </td>
+            <td data-col="heure">{{ doc.date_upload|date:"H:i" }}</td>
+            <td data-col="nom">
+                <span class="icone-type">
+                    {% if doc.type_fichier == 'pdf' %}📄
+                    {% elif doc.type_fichier == 'docx' %}📝
+                    {% else %}🖼️{% endif %}
+                </span>
+                <a class="lien-dossier" href="{{ doc.fichier.url }}">{{ doc.nom_original }}</a>
+                <a class="lien-externe" href="{{ doc.fichier.url }}" target="_blank" title="{% trans 'Ouvrir dans un nouvel onglet' %}">↗</a>
+            </td>
+            <td data-col="dossier">
+                {% if doc.dossier %}<a class="lien-dossier" href="{% url 'fiche_dossier' doc.dossier.id %}">{{ doc.dossier.titre }}</a>{% else %}—{% endif %}
+            </td>
+            <td data-col="categorie">{{ doc.get_categorie_display }}</td>
+            <td data-col="taille">{% if doc.taille_octets %}{{ doc.taille_octets|filesizeformat }}{% else %}—{% endif %}</td>
+            <td data-col="modif">{{ doc.date_upload|date:"d/m/Y H:i" }}</td>
+            <td data-col="reception">{{ doc.date_upload|date:"d/m/Y" }}</td>
+            <td data-col="commentaires">
+                {% if doc.commentaire %}{{ doc.commentaire|truncatechars:40 }}{% else %}<a class="lien-dossier" href="#">{% trans "Ajouter un commentaire" %}</a>{% endif %}
+            </td>
+            <td data-col="contact">{% if doc.client %}{{ doc.client }}{% else %}—{% endif %}</td>
+            <td data-col="auteur">
+                {% if doc.auteur %}{{ doc.auteur.get_full_name|default:doc.auteur.username }}{% else %}—{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<div class="docs-footer">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <span class="compteur">
+            {% blocktrans with debut=documents.start_index fin=documents.end_index total=documents.paginator.count %}{{ debut }}-{{ fin }} sur {{ total }}{% endblocktrans %}
+        </span>
+        <a class="pg" href="{% if documents.has_previous %}?page={{ documents.previous_page_number }}&q={{ q }}&tri={{ tri }}&dossier={{ dossier_id }}&categorie={{ categorie }}&type={{ type_f }}{% endif %}" {% if not documents.has_previous %}style="visibility:hidden;"{% endif %}>‹</a>
+        <a class="pg" href="{% if documents.has_next %}?page={{ documents.next_page_number }}&q={{ q }}&tri={{ tri }}&dossier={{ dossier_id }}&categorie={{ categorie }}&type={{ type_f }}{% endif %}" {% if not documents.has_next %}style="visibility:hidden;"{% endif %}>›</a>
+    </div>
+    <label><input type="checkbox" id="etendre-lignes"> {% trans "Étendre les lignes" %}</label>
+</div>
+{% else %}
+<div class="etat-vide">
+    <div class="icone">📄</div>
+    <p>{% trans "Aucun document pour le moment" %}</p>
+    <button type="button" class="btn" id="btn-upload-vide">{% trans "Ajouter un document" %}</button>
+</div>
+{% endif %}
+
+<script>
+    (function () {
+        var lienUpload = document.getElementById('lien-upload');
+        var btnVide = document.getElementById('btn-upload-vide');
+        var formUpload = document.getElementById('form-upload');
+        function basculer() { if (formUpload) { formUpload.hidden = !formUpload.hidden; } }
+        if (lienUpload) { lienUpload.addEventListener('click', function (e) { e.preventDefault(); basculer(); }); }
+        if (btnVide) { btnVide.addEventListener('click', basculer); }
+
+        var cocherTout = document.getElementById('cocher-tout');
+        if (cocherTout) {
+            cocherTout.addEventListener('change', function () {
+                document.querySelectorAll('.cocher-ligne').forEach(function (cb) { cb.checked = cocherTout.checked; });
+            });
+        }
+
+        document.querySelectorAll('#colonnes input[data-col]').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                document.querySelectorAll('[data-col="' + cb.dataset.col + '"]').forEach(function (el) {
+                    el.classList.toggle('masquee', !cb.checked);
+                });
+            });
+        });
+
+        var etendre = document.getElementById('etendre-lignes');
+        if (etendre) {
+            etendre.addEventListener('change', function () {
+                document.querySelectorAll('tbody tr').forEach(function (tr) {
+                    tr.classList.toggle('tr-etendu', etendre.checked);
+                });
+            });
+        }
+    })();
+</script>
+{% endblock %}

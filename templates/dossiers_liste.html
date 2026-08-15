@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Mes dossiers" %}{% endblock %}
+{% block page_title %}{% trans "Mes dossiers" %}{% endblock %}
+
+{% block content %}
+<form class="form-filtres" method="get" action="{% url 'liste_dossiers' %}">
+    <input type="text" name="q" value="{{ q }}" placeholder="{% trans 'Rechercher (client, titre)...' %}">
+    <select name="statut">
+        <option value="">{% trans "Tous les statuts" %}</option>
+        <option value="actif" {% if statut == 'actif' %}selected{% endif %}>{% trans "Actif" %}</option>
+        <option value="suspendu" {% if statut == 'suspendu' %}selected{% endif %}>{% trans "Suspendu" %}</option>
+        <option value="ferme" {% if statut == 'ferme' %}selected{% endif %}>{% trans "Fermé" %}</option>
+    </select>
+    <select name="type_procedure">
+        <option value="">{% trans "Toutes les procédures" %}</option>
+        <option value="appel_civil" {% if type_procedure == 'appel_civil' %}selected{% endif %}>{% trans "Appel civil" %}</option>
+        <option value="contestation" {% if type_procedure == 'contestation' %}selected{% endif %}>{% trans "Contestation" %}</option>
+        <option value="requete_introductive" {% if type_procedure == 'requete_introductive' %}selected{% endif %}>{% trans "Requête introductive" %}</option>
+    </select>
+    <button class="btn" type="submit">{% trans "Filtrer" %}</button>
+</form>
+
+<table>
+    <thead>
+        <tr>
+            <th>{% trans "Dossier" %}</th>
+            <th>{% trans "Client" %}</th>
+            <th>{% trans "Procédure" %}</th>
+            <th>{% trans "Statut" %}</th>
+            <th>{% trans "Début" %}</th>
+            <th>{% trans "Prochaine échéance" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for dossier, echeance, urgence, jours in resultats %}
+            <tr>
+                <td><strong><a class="lien-dossier" href="{% url 'fiche_dossier' dossier.id %}">{{ dossier.titre }}</a></strong></td>
+                <td>{{ dossier.client.prenom }} {{ dossier.client.nom }}</td>
+                <td>{{ dossier.get_type_procedure_display }}</td>
+                <td><span class="statut {{ dossier.statut }}">{{ dossier.get_statut_display }}</span></td>
+                <td>{{ dossier.date_debut }}</td>
+                <td>
+                    {% if echeance %}
+                        <span class="urgent {{ urgence }}">
+                            {{ echeance.type_delai }} — {{ echeance.date_limite }}
+                            {% if echeance.statut == 'depasse' %}{% trans "DÉPASSÉE" %}{% else %}({% blocktrans %}J-{{ jours }}{% endblocktrans %}){% endif %}
+                        </span>
+                    {% else %}
+                        <span class="aucun">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6" class="aucun">{% trans "Aucun dossier trouvé." %}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

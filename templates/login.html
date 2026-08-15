@@ -1,0 +1,31 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% trans "Connexion — Cabinet" %}</title>
+    {% include '_theme.html' %}
+    <style>
+        body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        main { padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="theme-cornertop">{% include '_theme_toggle.html' %}</div>
+
+    <div class="login-box">
+        <h1>{% trans "Connexion" %}</h1>
+        <form method="post">
+            {% csrf_token %}
+            {% if form.errors %}
+                <div class="errorlist">{% trans "Nom d'utilisateur ou mot de passe incorrect." %}</div>
+            {% endif %}
+            <label for="id_username">{% trans "Nom d'utilisateur" %}</label>
+            <input type="text" name="username" id="id_username" required>
+            <label for="id_password">{% trans "Mot de passe" %}</label>
+            <input type="password" name="password" id="id_password" required>
+            <button type="submit">{% trans "Se connecter" %}</button>
+        </form>
+    </div>
+</body>
+</html>

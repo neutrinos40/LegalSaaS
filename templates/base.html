@@ -1,0 +1,474 @@
+{% load i18n %}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    
+
+    <title>{% block title %}Cabinet{% endblock %}</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg: #FFFFFF;
+            --text: #1F2937;
+            --card: #FFFFFF;
+            --card-bg: var(--card);
+            --card-border: #E5E7EB;
+            --border: var(--card-border);
+            --line: #EEF0F3;
+            --gold: #0069D0;
+            --gold-strong: #0069D0;
+            --gold-bright: #4997E2;
+            --gold-text: #FFFFFF;
+            --muted: #6B7280;
+            --text-muted: #C6D2E0;
+            --text-disabled: #9AA5B1;
+            --compteur: #5A6472;
+            --focus-bg: #FFFFFF;
+            --focus-border: #D8DEE5;
+            --hover-bg: #F3F6FB;
+            --rouge-bg: #F7DADA;
+            --rouge-border: #D64545;
+            --orange-bg: #FDF3E0;
+            --orange-border: #E09A1E;
+            --vert-bg: #E7F4EC;
+            --vert-border: #2F9E63;
+            --badge-bg: #F7DADA;
+            --badge-text: #B03030;
+            --actif-text: #FFFFFF;
+            --sidebar: #001638;
+            --sidebar-active: #2F9E63;
+            --bandeau: #0069D0;
+        }
+        body.nuit {
+            --bg: #0B2440;
+            --text: #EDF4F8;
+            --card: #123A66;
+            --card-bg: var(--card);
+            --card-border: #1D4E85;
+            --border: var(--card-border);
+            --line: #1D4E85;
+            --gold: #4997E2;
+            --gold-strong: #0069D0;
+            --gold-bright: #6FB0EC;
+            --gold-text: #FFFFFF;
+            --muted: #9FB6C6;
+            --text-muted: #C6D2E0;
+            --text-disabled: #7E94A6;
+            --compteur: #C8D6E0;
+            --focus-bg: #0B2440;
+            --focus-border: #1D4E85;
+            --hover-bg: #1D4E85;
+            --rouge-bg: #4A1F22;
+            --rouge-border: #E05555;
+            --orange-bg: #4A3413;
+            --orange-border: #E0A23E;
+            --vert-bg: #1F3A2A;
+            --vert-border: #3EE07A;
+            --badge-bg: #7A2626;
+            --badge-text: #FFD9D9;
+            --actif-text: #FFFFFF;
+            --sidebar: #001638;
+            --sidebar-active: #003E93;
+            --bandeau: #0069D0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        /* ---------- SIDEBAR ---------- */
+        .sidebar {
+            width: 240px;
+            background: var(--sidebar);
+            color: #E6ECF5;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.2s ease, background 0.2s ease;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .sidebar.collapsed { width: 64px; }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 18px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, .12);
+            white-space: nowrap;
+        }
+        .hamburger, .theme-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            flex-shrink: 0;
+        }
+        .hamburger { display: flex; flex-direction: column; gap: 4px; }
+        .hamburger span { display: block; width: 20px; height: 2px; background: #FFFFFF; }
+        .theme-toggle { font-size: 16px; }
+
+        .brand {
+            font-size: 15px;
+            font-weight: bold;
+            color: #FFFFFF;
+            overflow: hidden;
+            flex: 1;
+        }
+        .sidebar.collapsed .brand { display: none; }
+        .sidebar.collapsed .theme-toggle { display: none; }
+
+        .nav-section {
+            flex: 1;
+            padding: 12px 0;
+            overflow-y: auto;
+        }
+  
+
+
+         .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 11px 18px;
+            color: #FFFFFF;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            border-left: 3px solid transparent;
+        }
+        .nav-link:hover {
+            background: var(--sidebar-active);
+            color: #FFFFFF;
+        }
+        .nav-link.active {
+            background: #2F9E63;
+            color: #FFFFFF;
+            font-weight: bold;
+            border-left: 3px solid #1e7e48;
+        }
+        .nav-icon { font-size: 16px; width: 18px; text-align: center; flex-shrink: 0; }
+        .nav-label { overflow: hidden; }
+        .sidebar.collapsed .nav-label { display: none; }
+        .sidebar.collapsed .nav-link { justify-content: center; padding: 11px 0; }
+
+        /* ---------- MAIN CONTENT ---------- */
+        .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 24px;
+            background: var(--bandeau);
+            color: #FFFFFF;
+        }
+        .top-bar h1 { font-size: 20px; margin: 0; color: #FFFFFF; }
+        .top-bar .user { font-size: 13px; color: rgba(255, 255, 255, .85); }
+                  .topbar-chrono {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,.15); padding: 4px 12px; border-radius: 6px;
+        }
+        .topbar-chrono #chrono-display {
+            font-size: 16px; font-weight: bold; color: #FFFFFF;
+            font-variant-numeric: tabular-nums; min-width: 84px; text-align: center;
+        }
+        .topbar-chrono .chrono-btn {
+            background: rgba(255,255,255,.25); color: #FFFFFF; border: none;
+            width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 13px;
+        }
+        .topbar-chrono .chrono-btn:hover { background: rgba(255,255,255,.4); }
+        .topbar-chrono .chrono-btn.chrono-running {
+            background: #dc3545; color: #FFFFFF;
+        }
+         
+        .lang-select {
+            background: rgba(255, 255, 255, .15); color: #FFFFFF;
+            border: 1px solid rgba(255, 255, 255, .4);
+            padding: 6px 8px; border-radius: 4px; font-size: 13px;
+        }
+        .lang-select option { color: #000; }
+        .logout-btn {
+            background: #FFFFFF; color: var(--gold-strong); border: none;
+            padding: 7px 16px; border-radius: 4px; font-size: 13px; font-weight: bold;
+            cursor: pointer; font-family: inherit; margin: 0;
+        }
+        .logout-btn:hover { background: var(--gold-bright); color: #FFFFFF; }
+        .content { padding: 30px; flex: 1; }
+
+        /* ---------- COMPOSANTS ---------- */
+        .card { background: var(--card); padding: 24px; border-radius: 6px; border: 1px solid var(--card-border); }
+        .btn {
+            background: var(--gold-strong); color: var(--actif-text); border: none; padding: 8px 14px; border-radius: 4px;
+            font-size: 14px; cursor: pointer; text-decoration: none; display: inline-block;
+        }
+        .btn:hover { background: var(--gold-bright); }
+
+        .item { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+        .item:last-child { border-bottom: none; }
+        .empty { color: var(--muted); font-size: 13px; }
+        .item.rouge { background: var(--rouge-bg); border-left: 4px solid var(--rouge-border); padding-left: 12px; }
+        .item.orange { background: var(--orange-bg); border-left: 4px solid var(--orange-border); padding-left: 12px; }
+        .item.vert { background: var(--vert-bg); border-left: 4px solid var(--vert-border); padding-left: 12px; }
+        .jours { color: var(--muted); font-size: 11px; margin-left: 8px; }
+        .badge { background: var(--badge-bg); color: var(--badge-text); font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 3px; margin-left: 8px; }
+        .pagination { margin-top: 16px; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .pagination .pg {
+            display: inline-block; background: var(--gold-strong); color: var(--actif-text);
+            border: 1px solid var(--gold-bright); border-radius: 4px;
+            padding: 6px 14px; text-decoration: none; font-size: 14px; font-weight: bold;
+        }
+        .pagination .pg:hover { background: var(--gold-bright); color: var(--actif-text); }
+        .pagination .compteur { color: var(--compteur); font-size: 13px; }
+
+        .statut { padding: 2px 8px; border-radius: 3px; font-size: 12px; margin-left: 8px; vertical-align: middle; }
+        .statut.actif { background: var(--vert-bg); color: var(--vert-border); }
+        .statut.suspendu { background: var(--orange-bg); color: var(--orange-border); }
+        .statut.ferme { background: var(--line); color: var(--muted); }
+        .urgent { padding: 3px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; }
+        .urgent.rouge { background: var(--rouge-bg); color: var(--rouge-border); }
+        .urgent.orange { background: var(--orange-bg); color: var(--orange-border); }
+        .urgent.vert { background: var(--vert-bg); color: var(--vert-border); }
+
+        label { display: block; margin-bottom: 6px; font-size: 13px; }
+        .card label { color: var(--gold); font-size: 14px; }
+        input {
+            width: 100%; background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+            padding: 10px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; box-sizing: border-box;
+        }
+        .hint { font-size: 12px; color: var(--muted); margin-top: -10px; margin-bottom: 16px; }
+        .message { font-size: 14px; margin-bottom: 16px; }
+        .message.ok { color: var(--vert-border); }
+        .message.erreur { color: var(--rouge-border); }
+
+        .form-filtres { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .form-filtres input, .form-filtres select {
+            background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+            padding: 8px 10px; border-radius: 4px; font-size: 14px; margin-bottom: 0;
+        }
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+        th { text-align: left; padding: 12px 16px; font-size: 13px; color: var(--gold); border-bottom: 1px solid var(--line); }
+        td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid var(--line); }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: var(--hover-bg); }
+        .aucun { color: var(--muted); font-size: 13px; padding: 12px; }
+
+        .lien-titre, .lien-dossier, .retour { color: var(--gold); text-decoration: none; }
+        .lien-titre:hover, .lien-dossier:hover, .retour:hover { text-decoration: underline; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; margin-bottom: 24px; }
+        .meta { font-size: 14px; line-height: 1.9; color: var(--muted); }
+        .meta strong { color: var(--text); }
+
+        .focus { display: flex; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+        .focus a {
+            background: var(--focus-bg); color: var(--text); text-decoration: none;
+            border: 1px solid var(--focus-border); border-radius: 4px; padding: 8px 16px; font-size: 14px;
+        }
+        .focus a:hover { border-color: var(--gold-strong); }
+        .focus a.actif { background: var(--gold-strong); color: var(--actif-text); font-weight: bold; border-color: var(--gold-strong); }
+        .layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+        .col-droite { display: grid; gap: 24px; }
+        .card h2 { font-size: 16px; margin-bottom: 16px; color: var(--gold); }
+        @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+
+        .facture-doc{border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:22px;background:#fff;}
+.facture-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #2F9E63;padding-bottom:14px;margin-bottom:14px;}
+.facture-logo{font-size:18px;font-weight:700;color:#2F9E63;}
+.facture-sub{font-size:12px;color:var(--muted);}
+.facture-titre{text-align:right;}
+.facture-titre h2{margin:0 0 6px;letter-spacing:2px;color:#1f2d3d;}
+.facture-table{width:100%;border-collapse:collapse;font-size:13px;}
+.facture-table th{text-align:left;background:#f3f6f9;padding:8px;border-bottom:1px solid var(--border);}
+.facture-table td{padding:8px;border-bottom:1px solid #eef2f5;}
+.facture-table .montant{text-align:right;white-space:nowrap;}
+.facture-table tfoot td{border-top:2px solid var(--border);font-weight:700;}
+.facture-table .total{color:#2F9E63;font-size:15px;}
+
+    </style>
+</head>
+<body>
+    
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="hamburger" id="hamburger-btn" aria-label="Ouvrir/fermer le menu" title="Ouvrir/fermer le menu">
+                <span></span><span></span><span></span>
+            </button>
+            <div class="brand">Cabinet</div>
+            <button class="theme-toggle" id="theme-toggle-btn" aria-label="Changer de thème" title="Changer de thème">🌙</button>
+        </div>
+
+        <div class="nav-section">
+    <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" title="{% trans 'Tableau de bord' %}">
+         
+       
+        <span class="nav-icon">🏠</span><span class="nav-label">{% trans "Tableau de bord" %}</span>
+    </a>
+    
+    <a href="{% url 'dashboard' %}?actif=calendrier" class="nav-link {% if request.GET.actif == 'calendrier' %}active{% endif %}" title="{% trans 'Calendrier' %}">
+        <span class="nav-icon">📅</span><span class="nav-label">{% trans "Calendrier" %}</span>
+    </a>
+    <a href="{% url 'liste_dossiers' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_dossiers' or request.resolver_match.url_name == 'fiche_dossier' %}active{% endif %}" title="{% trans 'Dossiers' %}">
+        <span class="nav-icon">📁</span><span class="nav-label">{% trans "Dossiers" %}</span>
+    </a>
+    <a href="{% url 'liste_clients' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_clients' or request.resolver_match.url_name == 'fiche_client' %}active{% endif %}" title="{% trans 'Clients' %}">
+        <span class="nav-icon">👤</span><span class="nav-label">{% trans "Clients" %}</span>
+    </a>
+    <a href="{% url 'liste_echeances' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_echeances' %}active{% endif %}" title="{% trans 'Échéances' %}">
+        <span class="nav-icon">⏰</span><span class="nav-label">{% trans "Échéances" %}</span>
+    </a>
+    <a href="{% url 'liste_rendezvous' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_rendezvous' %}active{% endif %}" title="{% trans 'Rendez-vous' %}">
+        <span class="nav-icon">🤝</span><span class="nav-label">{% trans "Rendez-vous" %}</span>
+    </a>
+    <a href="{% url 'liste_documents' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_documents' or request.resolver_match.url_name == 'analyser_document' or request.resolver_match.url_name == 'reviser_document' %}active{% endif %}" title="{% trans 'Documents' %}">
+        <span class="nav-icon">📄</span><span class="nav-label">{% trans "Documents" %}</span>
+    </a>
+    <a href="{% url 'liste_documents_generes' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_documents_generes' or request.resolver_match.url_name == 'generer_document' %}active{% endif %}" title="{% trans 'Documents générés (IA)' %}">
+        <span class="nav-icon">✨</span><span class="nav-label">{% trans "Documents IA" %}</span>
+    </a>
+    <a href="{% url 'liste_facturation' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_facturation' %}active{% endif %}" title="{% trans 'Facturation' %}">
+    <span class="nav-icon">💳</span><span class="nav-label">{% trans "Facturation" %}</span>
+  </a>
+
+
+
+    <a href="{% url 'reglages' %}" class="nav-link {% if request.resolver_match.url_name == 'reglages' %}active{% endif %}" title="{% trans 'Réglages' %}">
+        <span class="nav-icon">⚙️</span><span class="nav-label">{% trans "Réglages" %}</span>
+    </a>
+</div>
+
+
+
+
+
+    </div>
+
+      <div class="main">
+        <div class="top-bar">
+            <h1>{% block page_title %}{% endblock %}</h1>
+            <div class="topbar-chrono">
+                <button id="chrono-toggle" class="chrono-btn" type="button">▶</button>
+                <span id="chrono-display">00:00:00</span>
+                
+                <button id="chrono-reset" class="chrono-btn" type="button">⟲</button>
+            </div>
+            <div style="display:flex; align-items:center; gap:14px;">
+                <span class="user">{{ request.user.username }}</span>
+                <form action="{% url 'set_language' %}" method="post" style="display:inline; margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <select name="language" class="lang-select" onchange="this.form.submit()">
+                        <option value="fr" {% if LANGUAGE_CODE == 'fr' %}selected{% endif %}>Français</option>
+                        <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+                    </select>
+                </form>
+                <form method="post" action="{% url 'logout' %}" style="display:inline; margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="logout-btn">{% trans "Déconnexion" %}</button>
+                </form>
+            </div>
+        </div>
+        <div class="content">
+            {% if messages %}
+              {% for m in messages %}<div class="alert alert-{{ m.tags }}">{{ m }}</div>{% endfor %}
+            {% endif %}
+            {% block content %}{% endblock %}
+
+    <script>
+        const sidebar = document.getElementById('sidebar');
+        const hamburgerBtn = document.getElementById('hamburger-btn');
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const bodyEl = document.body;
+
+        // --- Menu collapse/expand (état mémorisé) ---
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+            sidebar.classList.add('collapsed');
+        }
+        hamburgerBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        });
+
+        // --- Mode jour / nuit (état mémorisé) ---
+        function applyTheme(nuit) {
+            bodyEl.classList.toggle('nuit', nuit);
+            themeToggleBtn.textContent = nuit ? '☀️' : '🌙';
+        }
+        applyTheme(localStorage.getItem('theme') === 'nuit');
+
+        themeToggleBtn.addEventListener('click', () => {
+            const nuit = !bodyEl.classList.contains('nuit');
+            localStorage.setItem('theme', nuit ? 'nuit' : 'jour');
+            applyTheme(nuit);
+        });
+        
+    </script>
+
+<script>
+            // --- Chronomètre global (localStorage) ---
+        (function() {
+            const display = document.getElementById('chrono-display');
+            const toggleBtn = document.getElementById('chrono-toggle');
+            const resetBtn = document.getElementById('chrono-reset');
+            const KEY_START = 'chronoStart';
+            const KEY_ACC = 'chronoAccum';
+
+            function getStart() {
+                const s = localStorage.getItem(KEY_START);
+                return s ? parseInt(s, 10) : null;
+            }
+            function getAccum() {
+                const a = localStorage.getItem(KEY_ACC);
+                return a ? parseInt(a, 10) : 0;
+            }
+            function elapsed() {
+                const s = getStart();
+                return getAccum() + (s ? Math.floor((Date.now() - s) / 1000) : 0);
+            }
+            function fmt(sec) {
+                const h = Math.floor(sec / 3600);
+                const m = Math.floor((sec % 3600) / 60);
+                const s = sec % 60;
+                return [h, m, s].map(x => String(x).padStart(2, '0')).join(':');
+            }
+            function render() { display.textContent = fmt(elapsed()); }
+            function updateBtn() {
+                const running = !!getStart();
+                toggleBtn.textContent = running ? '⏸' : '▶';
+                toggleBtn.classList.toggle('chrono-running', running);
+            }
+            toggleBtn.addEventListener('click', function() {
+                const s = getStart();
+                if (s) {
+                    localStorage.setItem(KEY_ACC, getAccum() + Math.floor((Date.now() - s) / 1000));
+                    localStorage.removeItem(KEY_START);
+                } else {
+                    localStorage.setItem(KEY_START, Date.now());
+                }
+                updateBtn(); render();
+            });
+            resetBtn.addEventListener('click', function() {
+                localStorage.removeItem(KEY_START);
+                localStorage.removeItem(KEY_ACC);
+                updateBtn(); render();
+            });
+            updateBtn(); render();
+            setInterval(render, 1000);
+        })();
+        </script> 
+
+
+
+</body>
+</html>

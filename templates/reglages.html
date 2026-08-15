@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Mes réglages" %}{% endblock %}
+{% block page_title %}{% trans "Mes réglages" %}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 480px;">
+    <h2>{% trans "Seuils d'urgence des échéances" %}</h2>
+    {% if message %}
+        <div class="message {% if message_ok %}ok{% else %}erreur{% endif %}">{{ message }}</div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="seuil_rouge">{% trans "Rouge : échéance à J-… ou moins" %}</label>
+        <input type="number" id="seuil_rouge" name="seuil_rouge" min="1" value="{{ profil.seuil_rouge }}">
+        <label for="seuil_orange">{% trans "Orange : échéance à J-… ou moins" %}</label>
+        <input type="number" id="seuil_orange" name="seuil_orange" min="1" value="{{ profil.seuil_orange }}">
+        <div class="hint">{% trans "Rouge = critique, Orange = à surveiller. Rouge doit être inférieur à Orange." %}</div>
+        <button class="btn" type="submit">{% trans "Enregistrer" %}</button>
+    </form>
+</div>
+{% endblock %}

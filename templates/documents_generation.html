@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Générer un document" %}{% endblock %}
+{% block page_title %}{% trans "Générer un document" %}{% endblock %}
+
+{% block content %}
+<style>
+    .gen-form { max-width: 640px; }
+    .gen-form input, .gen-form select {
+        background: var(--focus-bg); color: var(--text); border: 1px solid var(--focus-border);
+        padding: 8px 10px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; width: 100%;
+    }
+    .gen-note { font-size: 13px; color: var(--muted); margin-top: -8px; margin-bottom: 16px; }
+    .gen-form .champ { margin-bottom: 4px; }
+</style>
+
+<div class="card gen-form">
+    <h2>{% trans "Nouvelle mise en demeure" %}</h2>
+    <p class="gen-note">{% trans "Les informations déjà présentes dans le dossier sont reprises automatiquement." %}</p>
+    <form method="post" action="{% url 'generer_document' %}">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="champ">
+                {{ field.label_tag }}
+                {{ field }}
+                {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+            </div>
+        {% endfor %}
+        <button class="btn" type="submit">{% trans "Générer le brouillon" %}</button>
+        <a class="retour" href="{% url 'liste_documents_generes' %}" style="margin-left:14px;">{% trans "Retour" %}</a>
+    </form>
+</div>
+{% endblock %}
