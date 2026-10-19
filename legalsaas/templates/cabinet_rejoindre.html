@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Rejoindre un cabinet" %}{% endblock %}
+{% block page_title %}{% trans "Rejoindre un cabinet" %}{% endblock %}
+
+{% block content %}
+<div class="card form-centre" style="max-width: 480px;">
+    {% if messages %}
+    {% for message in messages %}
+    <div class="message {% if message.tags %}{{ message.tags }}{% endif %}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+
+    <h2>{% trans "Rejoindre un cabinet existant" %}</h2>
+    {% if cabinets %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="cabinet_id">{% trans "Sélectionnez un cabinet" %}</label>
+        <select id="cabinet_id" name="cabinet_id" required>
+            <option value="">— {% trans "Choisir" %} —</option>
+            {% for cab in cabinets %}
+            <option value="{{ cab.id }}">{{ cab.nom }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn" type="submit">{% trans "Rejoindre" %}</button>
+    </form>
+    {% else %}
+    <p class="empty">{% trans "Aucun cabinet disponible." %}</p>
+    {% endif %}
+
+    <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);">
+        <p>{% trans "Vous souhaitez créer votre propre cabinet ?" %}</p>
+        <a class="btn" href="{% url 'creer_cabinet' %}" style="display:inline-block;">{% trans "Créer un cabinet" %}</a>
+    </div>
+</div>
+{% endblock %}

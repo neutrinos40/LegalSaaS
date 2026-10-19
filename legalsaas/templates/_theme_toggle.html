@@ -1,0 +1,41 @@
+{% load i18n %}
+<form action="{% url 'set_language' %}" method="post" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <select name="language" class="lang-select" onchange="this.form.submit()">
+        <option value="fr" {% if LANGUAGE_CODE == 'fr' %}selected{% endif %}>Français</option>
+        <option value="en" {% if LANGUAGE_CODE == 'en' %}selected{% endif %}>English</option>
+    </select>
+</form>
+<button type="button" class="theme-btn" id="btn-theme">{% trans "Mode nuit" %}</button>
+<script>
+    (function () {
+        var btn = document.getElementById('btn-theme');
+        var txtJour = "{% trans 'Mode jour' %}";
+        var txtNuit = "{% trans 'Mode nuit' %}";
+        function appliquer(nuit) {
+            document.body.classList.toggle('nuit', nuit);
+            if (btn) { btn.textContent = nuit ? txtJour : txtNuit; }
+        }
+        appliquer(localStorage.getItem('legalsaas_theme') === 'nuit');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                var nuit = !document.body.classList.contains('nuit');
+                localStorage.setItem('legalsaas_theme', nuit ? 'nuit' : 'jour');
+                appliquer(nuit);
+            });
+        }
+    })();
+    (function () {
+        var btnSide = document.getElementById('btn-sidebar');
+        if (btnSide) {
+            function appliquerMenu(reduit) { document.body.classList.toggle('menu-reduit', reduit); }
+            appliquerMenu(localStorage.getItem('legalsaas_menu') === 'reduit');
+            btnSide.addEventListener('click', function () {
+                var reduit = !document.body.classList.contains('menu-reduit');
+                localStorage.setItem('legalsaas_menu', reduit ? 'reduit' : 'ouvert');
+                appliquerMenu(reduit);
+            });
+        }
+    })();
+</script>

@@ -1,0 +1,20 @@
+{% load i18n %}
+<div class="card">
+    <h2>{% trans "Rendez-vous à venir" %}</h2>
+    {% for rdv in rendez_vous %}
+        <div class="item">{{ rdv.client }} — {{ rdv.date_heure }}</div>
+    {% empty %}
+        <div class="empty">{% trans "Aucun rendez-vous planifié." %}</div>
+    {% endfor %}
+    {% if rendez_vous.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if rendez_vous.has_previous %}
+            <a class="pg" href="?page_rdv={{ rendez_vous.previous_page_number }}&page_dossiers={{ dossiers.number }}&page_echeances={{ echeances_page.number }}&actif={{ actif }}">‹ {% trans "Précédent" %}</a>
+        {% endif %}
+        <span class="compteur">{% blocktrans with numero=rendez_vous.number total=rendez_vous.paginator.num_pages %}Page {{ numero }} / {{ total }}{% endblocktrans %}</span>
+        {% if rendez_vous.has_next %}
+            <a class="pg" href="?page_rdv={{ rendez_vous.next_page_number }}&page_dossiers={{ dossiers.number }}&page_echeances={{ echeances_page.number }}&actif={{ actif }}">{% trans "Suivant" %} ›</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Créer un cabinet" %}{% endblock %}
+{% block page_title %}{% trans "Créer un cabinet" %}{% endblock %}
+
+{% block content %}
+<div style="max-width:520px; margin:0 auto;">
+    <div class="card">
+        <h2>{% trans "Informations du cabinet" %}</h2>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="nom">{% trans "Nom du cabinet" %}</label>
+            <input type="text" id="nom" name="nom" required placeholder="{% trans 'ex. : Cabinet Tremblay & Associés' %}">
+
+            <label for="logo">{% trans "Logo" %}</label>
+            <input type="file" id="logo" name="logo" accept="image/*" style="padding:8px;">
+
+            <label for="adresse">{% trans "Adresse" %}</label>
+            <input type="text" id="adresse" name="adresse" placeholder="{% trans '123 rue Exemple, Montréal' %}">
+
+            <label for="telephone">{% trans "Téléphone" %}</label>
+            <input type="tel" id="telephone" name="telephone" placeholder="{% trans '514-123-4567' %}">
+
+            <label for="email">{% trans "Email" %}</label>
+            <input type="email" id="email" name="email" placeholder="{% trans 'info@cabinet.com' %}">
+
+            <label for="site_web">{% trans "Site web" %}</label>
+            <input type="url" id="site_web" name="site_web" placeholder="{% trans 'https://www.cabinet.com' %}">
+
+            <div class="hint">{% trans "Vous serez automatiquement désigné comme chef de cabinet." %}</div>
+            <button class="btn" type="submit">{% trans "Créer le cabinet" %}</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

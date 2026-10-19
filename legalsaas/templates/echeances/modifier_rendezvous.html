@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Modifier un rendez-vous" %}{% endblock %}
+{% block page_title %}{% trans "Modifier un rendez-vous" %}{% endblock %}
+
+{% block content %}
+<div class="card form-centre">
+  <form method="post">
+    {% csrf_token %}
+    {% if next %}
+    <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+    {{ form.as_p }}
+    <div style="margin-top: 18px; text-align: right;">
+      <a href="{{ next|default:'/' }}" class="btn">{% trans "Annuler" %}</a>
+      <button type="submit" class="btn">{% trans "Enregistrer" %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

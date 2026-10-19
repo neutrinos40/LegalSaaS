@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load documents_filters %}
+{% block title %}{% trans "Analyse du document" %}{% endblock %}
+{% block page_title %}{% trans "Analyse du document" %}{% endblock %}
+
+{% block content %}
+<style>
+    .ana-en-tete { margin-bottom: 16px; }
+    .ana-en-tete h2 { margin: 8px 0 4px; }
+    .ana-contenu { line-height: 1.8; }
+    .ana-contenu h1, .ana-contenu h2, .ana-contenu h3, .ana-contenu h4 { margin: 18px 0 8px; }
+    .ana-contenu h1 { font-size: 20px; }
+    .ana-contenu h2 { font-size: 18px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+    .ana-contenu h3 { font-size: 16px; }
+    .ana-contenu h4 { font-size: 15px; }
+    .ana-contenu ul { margin: 6px 0 12px 22px; }
+    .ana-contenu p { margin: 8px 0; }
+    .ana-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    .analyses-passees { margin-top: 24px; }
+    .analyses-passees .item { padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .analyses-passees .item:last-child { border-bottom: none; }
+</style>
+
+<div class="ana-en-tete">
+    <a class="retour" href="{% url 'liste_documents' %}">← {% trans "Retour aux documents" %}</a>
+    <h2>{{ analyse.document.nom_original }}</h2>
+    <p class="meta">
+        {{ analyse.document.dossier.titre|default:_("Aucun dossier") }}
+        {% if analyse.document.dossier.client %} — {{ analyse.document.dossier.client }}{% endif %}
+    </p>
+    <p class="meta">
+        {% trans "Analyse du" %} {{ analyse.date_analyse|date:"d/m/Y H:i" }}
+        {% if analyse.auteur %} — {% trans "par" %} {{ analyse.auteur.get_full_name|default:analyse.auteur.username }}{% endif %}
+    </p>
+</div>
+
+<div class="card ana-contenu">
+    {{ analyse.contenu_analyse|markdown_leger|safe }}
+</div>
+
+<div class="ana-actions">
+    <a class="btn" href="{% url 'exporter_analyse' analyse.pk 'docx' %}">⬇️ {% trans "Télécharger Word" %}</a>
+    <a class="btn" href="{% url 'exporter_analyse' analyse.pk 'pdf' %}">⬇️ {% trans "Télécharger PDF" %}</a>
+    <a class="btn" href="{% url 'analyser_document' analyse.document.id %}">{% trans "Lancer une nouvelle analyse" %}</a>
+</div>
+
+<div class="card analyses-passees">
+    <h2>{% trans "Analyses précédentes" %}</h2>
+    {% for a in analyse.document.analyses.all %}
+        {% if a.pk != analyse.pk %}
+            <div class="item">
+                <span>{{ a.date_analyse|date:"d/m/Y H:i" }} — {{ a.auteur.get_full_name|default:a.auteur.username|default:"—" }}</span>
+                <a class="meta" href="{% url 'fiche_analyse' a.pk %}">→ {% trans "Voir" %}</a>
+            </div>
+        {% endif %}
+    {% empty %}
+        <p class="empty">{% trans "Aucune autre analyse." %}</p>
+    {% endfor %}
+</div>
+{% endblock %}

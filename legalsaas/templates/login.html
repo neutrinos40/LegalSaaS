@@ -1,0 +1,180 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% trans "Connexion — LegalSaas" %}</title>
+    {% include '_theme.html' %}
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* ---------- PARTIE GAUCHE (bleu foncé) ---------- */
+        .panel-gauche {
+            width: 50%;
+            background: linear-gradient(135deg, #0A1E3C, #0D2B57);
+            color: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            border-right: 2px solid rgba(255, 255, 255, .25);
+        }
+        .panel-gauche .balance {
+            font-size: 130px;
+            line-height: 1;
+            margin-bottom: 32px;
+        }
+        .panel-gauche h1 {
+            font-size: 38px;
+            font-weight: 800;
+            margin-bottom: 18px;
+        }
+        .panel-gauche p {
+            font-size: 17px;
+            color: #B8C6DC;
+            max-width: 440px;
+            line-height: 1.7;
+        }
+
+        /* ---------- PARTIE DROITE (blanc) ---------- */
+        .panel-droit {
+            flex: 1;
+            min-width: 0;
+            background: var(--card);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 56px;
+            border-left: 1px solid rgba(0, 0, 0, .1);
+        }
+        .panel-droit .login-box { width: 100%; max-width: 420px; }
+        .panel-droit h2 {
+            font-size: 30px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .panel-droit .sous-titre {
+            font-size: 15px;
+            color: var(--muted);
+            margin-bottom: 32px;
+        }
+        .panel-droit label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .panel-droit input {
+            width: 100%;
+            background: #F4F6F9;
+            color: var(--text);
+            border: 1px solid var(--focus-border);
+            padding: 13px 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+        .panel-droit input:focus {
+            outline: none;
+            border-color: var(--gold-strong);
+            background: #FFFFFF;
+        }
+        .errorlist {
+            background: var(--rouge-bg);
+            color: var(--rouge-border);
+            border: 1px solid var(--rouge-border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .lien-oublie {
+            display: block;
+            text-align: right;
+            font-size: 14px;
+            color: var(--gold-strong);
+            text-decoration: none;
+            margin: 4px 0 22px 0;
+        }
+        .lien-oublie:hover { text-decoration: underline; }
+        .panel-droit button {
+            width: 100%;
+            background: #0A1E3C;
+            color: #FFFFFF;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .panel-droit button:hover { background: #14325E; }
+        .panel-droit .inscription {
+            margin-top: 26px;
+            font-size: 14px;
+            color: var(--muted);
+            text-align: center;
+        }
+        .panel-droit .inscription a {
+            color: var(--gold-strong);
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .panel-droit .inscription a:hover { text-decoration: underline; }
+
+        .theme-cornertop {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            z-index: 10;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .panel-gauche { display: none; }
+            .panel-droit { width: 100%; min-height: 100vh; padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-cornertop">{% include '_theme_toggle.html' %}</div>
+
+    <!-- Partie gauche : fond bleu foncé + balance -->
+    <div class="panel-gauche">
+        <div class="balance">⚖️</div>
+        <h1>Bienvenue sur LegalSaas</h1>
+        <p>{% trans "Votre plateforme intégrée pour gérer votre cabinet d'avocat avec efficacité et personnalisme." %}</p>
+    </div>
+
+    <!-- Partie droite : fond blanc + formulaire -->
+    <div class="panel-droit">
+        <div class="login-box">
+            <h2>{% trans "Connexion" %}</h2>
+            <p class="sous-titre">{% trans "Entrez vos identifiants pour accéder à votre cabinet" %}</p>
+            <form method="post">
+                {% csrf_token %}
+                {% if form.errors %}
+                    <div class="errorlist">{% trans "Nom d'utilisateur ou mot de passe incorrect." %}</div>
+                {% endif %}
+                <label for="id_username">{% trans "Adresse e-mail" %}</label>
+                <input type="text" name="username" id="id_username" placeholder="example@email.com" autofocus required>
+                <label for="id_password">{% trans "Mot de passe" %}</label>
+                <input type="password" name="password" id="id_password" required>
+                <a class="lien-oublie" href="{% url 'password_reset' %}">{% trans "Mot de passe oublié ?" %}</a>
+                <button type="submit">{% trans "Se connecter" %}</button>
+            </form>
+            <div class="inscription">
+                {% trans "Pas encore de compte ?" %} <a href="{% url 'inscription' %}">{% trans "Inscrivez-vous" %}</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

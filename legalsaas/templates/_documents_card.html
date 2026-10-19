@@ -1,0 +1,26 @@
+{% load i18n %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px;">
+        <h2 style="margin:0;">{% trans "Documents" %}</h2>
+        <a class="btn" style="padding:5px 12px; font-size:13px;" href="{% url 'liste_documents' %}">🤖 {% trans "Analyser un document" %}</a>
+    </div>
+    {% for doc in documents_recents %}
+        <div class="item">
+            <strong>
+                {% if doc.type_fichier == 'pdf' %}📄
+                {% elif doc.type_fichier == 'docx' %}📝
+                {% else %}🖼️{% endif %}
+                {{ doc.nom_original|truncatechars:40 }}
+            </strong>
+            {% if doc.dossier %}<span class="meta">{{ doc.dossier.titre }}</span>{% endif %}
+            {% if doc.type_fichier == 'docx' or doc.type_fichier == 'pdf' or doc.type_fichier == 'txt' %}
+                <a class="btn" style="padding:2px 10px;font-size:12px;" href="{% url 'analyser_document' doc.id %}">🤖 {% trans "Analyser" %}</a>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="empty">{% trans "Aucun document pour le moment" %}</div>
+    {% endfor %}
+    <div class="pagination">
+        <a class="pg" href="{% url 'liste_documents' %}">{% trans "Voir tous les documents" %} →</a>
+    </div>
+</div>

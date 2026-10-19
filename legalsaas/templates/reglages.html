@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Mes réglages" %}{% endblock %}
+{% block page_title %}{% trans "Mes réglages" %}{% endblock %}
+
+{% block content %}
+<div class="card form-centre" style="max-width: 480px;">
+    <h2>{% trans "Mon cabinet" %}</h2>
+    {% if message %}
+        <div class="message {% if message_ok %}ok{% else %}erreur{% endif %}">{{ message }}</div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="cabinet">
+        <label for="cabinet_id">{% trans "Sélectionnez votre cabinet" %}</label>
+        <select id="cabinet_id" name="cabinet_id">
+            <option value="">— {% trans "Aucun cabinet" %} —</option>
+            {% for cab in cabinets %}
+                <option value="{{ cab.id }}" {% if profil.cabinet and profil.cabinet.id == cab.id %}selected{% endif %}>{{ cab.nom }}</option>
+            {% endfor %}
+        </select>
+        <div class="hint">{% trans "Les avocats du même cabinet partagent les mêmes clients, dossiers et échéances." %}</div>
+        <div style="display:flex; gap:10px;">
+            <button class="btn" type="submit">{% trans "Enregistrer le cabinet" %}</button>
+            <a class="btn" href="{% url 'creer_cabinet' %}" style="background:var(--vert-border);">{% trans "Ajouter un cabinet" %}</a>
+        </div>
+    </form>
+</div>
+
+<div class="card form-centre" style="max-width: 480px;">
+    <h2>{% trans "Seuils d'urgence des échéances" %}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="seuils">
+        <label for="seuil_rouge">{% trans "Rouge : échéance à J-… ou moins" %}</label>
+        <input type="number" id="seuil_rouge" name="seuil_rouge" min="1" value="{{ profil.seuil_rouge }}">
+        <label for="seuil_orange">{% trans "Orange : échéance à J-… ou moins" %}</label>
+        <input type="number" id="seuil_orange" name="seuil_orange" min="1" value="{{ profil.seuil_orange }}">
+        <div class="hint">{% trans "Rouge = critique, Orange = à surveiller. Rouge doit être inférieur à Orange." %}</div>
+        <button class="btn" type="submit">{% trans "Enregistrer" %}</button>
+    </form>
+</div>
+{% endblock %}

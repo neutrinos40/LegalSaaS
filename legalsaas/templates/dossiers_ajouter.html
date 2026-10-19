@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Nouveau dossier" %}{% endblock %}
+{% block page_title %}{% trans "Nouveau dossier" %}{% endblock %}
+
+{% block content %}
+<form method="post" class="formulaire">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="champ">
+            {% for err in form.non_field_errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+        </div>
+    {% endif %}
+
+    <h3 class="titre-section">{% trans "Nouveau client" %}</h3>
+    {% for field in form %}
+        {% if field.name == 'client_existant' %}
+            <h3 class="titre-section">{% trans "— ou —" %}</h3>
+        {% elif field.name == 'titre' %}
+            <h3 class="titre-section">{% trans "Dossier" %}</h3>
+        {% elif field.name == 'echeance_type' %}
+            <h3 class="titre-section">{% trans "Prochaine échéance (facultatif)" %}</h3>
+        {% endif %}
+
+        <div class="champ">
+            {{ field.label_tag }}
+            {{ field }}
+            {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+            {% if field.help_text %}<div class="aide">{{ field.help_text }}</div>{% endif %}
+        </div>
+    {% endfor %}
+
+    <datalist id="suggestions-echeance">
+        <option value="{% trans 'Dépôt de la défense' %}"></option>
+        <option value="{% trans 'Contestation' %}"></option>
+        <option value="{% trans 'Réponse à l’avis' %}"></option>
+        <option value="{% trans 'Audience' %}"></option>
+        <option value="{% trans 'Prescription' %}"></option>
+        <option value="{% trans 'Appel' %}"></option>
+        <option value="{% trans 'Dépôt de la requête' %}"></option>
+        <option value="{% trans 'Communication de la preuve' %}"></option>
+        <option value="{% trans 'Médiation' %}"></option>
+        <option value="{% trans 'Mise en état' %}"></option>
+    </datalist>
+
+    <div class="ligne-boutons">
+        <a class="btn" style="background:var(--line); color:var(--text);" href="{% url 'liste_dossiers' %}">{% trans "Annuler" %}</a>
+        <button class="btn" type="submit">{% trans "Créer" %}</button>
+    </div>
+</form>
+
+<style>
+    .titre-section {
+        margin: 22px 0 6px;
+        font-size: 15px;
+        color: #6B7280;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+    .titre-section:first-of-type { margin-top: 0; }
+</style>
+{% endblock %}

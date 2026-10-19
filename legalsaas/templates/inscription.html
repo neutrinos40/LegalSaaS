@@ -1,0 +1,133 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% trans "Inscription — LegalSaas" %}</title>
+    {% include '_theme.html' %}
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .panel-gauche {
+            width: 50%;
+            background: linear-gradient(135deg, #0A1E3C, #0D2B57);
+            color: #FFFFFF;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            border-right: 2px solid rgba(255, 255, 255, .25);
+        }
+        .panel-gauche .balance { font-size: 130px; line-height: 1; margin-bottom: 32px; }
+        .panel-gauche h1 { font-size: 38px; font-weight: 800; margin-bottom: 18px; }
+        .panel-gauche p { font-size: 17px; color: #B8C6DC; max-width: 440px; line-height: 1.7; }
+
+        .panel-droit {
+            flex: 1;
+            min-width: 0;
+            background: var(--card);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 56px;
+            border-left: 1px solid rgba(0, 0, 0, .1);
+        }
+        .panel-droit .login-box { width: 100%; max-width: 420px; }
+        .panel-droit h2 { font-size: 30px; font-weight: 800; margin-bottom: 8px; }
+        .panel-droit .sous-titre { font-size: 15px; color: var(--muted); margin-bottom: 28px; }
+        .panel-droit label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .panel-droit input {
+            width: 100%;
+            background: #F4F6F9;
+            color: var(--text);
+            border: 1px solid var(--focus-border);
+            padding: 13px 16px;
+            border-radius: 8px;
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+        .panel-droit input:focus { outline: none; border-color: var(--gold-strong); background: #FFFFFF; }
+        .panel-droit input[type="password"] { margin-bottom: 16px; }
+        .errorlist {
+            background: var(--rouge-bg);
+            color: var(--rouge-border);
+            border: 1px solid var(--rouge-border);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .panel-droit button {
+            width: 100%;
+            background: #0A1E3C;
+            color: #FFFFFF;
+            border: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+        .panel-droit button:hover { background: #14325E; }
+        .panel-droit .connexion {
+            margin-top: 26px;
+            font-size: 14px;
+            color: var(--muted);
+            text-align: center;
+        }
+        .panel-droit .connexion a { color: var(--gold-strong); text-decoration: none; font-weight: bold; }
+        .panel-droit .connexion a:hover { text-decoration: underline; }
+
+        .theme-cornertop { position: fixed; top: 16px; right: 20px; z-index: 10; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .panel-gauche { display: none; }
+            .panel-droit { width: 100%; min-height: 100vh; padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-cornertop">{% include '_theme_toggle.html' %}</div>
+
+    <div class="panel-gauche">
+        <div class="balance">⚖️</div>
+        <h1>Bienvenue sur LegalSaas</h1>
+        <p>{% trans "Votre plateforme intégrée pour gérer votre cabinet d'avocat avec efficacité et personnalisme." %}</p>
+    </div>
+
+    <div class="panel-droit">
+        <div class="login-box">
+            <h2>{% trans "Inscription" %}</h2>
+            <p class="sous-titre">{% trans "Créez votre compte gratuitement" %}</p>
+            {% if erreur %}
+                <div class="errorlist">{{ erreur }}</div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                <label for="id_username">{% trans "Nom d'utilisateur" %}</label>
+                <input type="text" name="username" id="id_username" value="{{ request.POST.username }}" autofocus required>
+                <label for="id_email">{% trans "Adresse e-mail" %}</label>
+                <input type="email" name="email" id="id_email" value="{{ request.POST.email }}" placeholder="example@email.com" required>
+                <label for="id_password1">{% trans "Mot de passe" %}</label>
+                <input type="password" name="password1" id="id_password1" required>
+                <label for="id_password2">{% trans "Confirmez le mot de passe" %}</label>
+                <input type="password" name="password2" id="id_password2" required>
+                <button type="submit">{% trans "Créer mon compte" %}</button>
+            </form>
+            <div class="connexion">
+                {% trans "Déjà un compte ?" %} <a href="{% url 'login' %}">{% trans "Connectez-vous" %}</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

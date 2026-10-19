@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Cabinet" %}{% endblock %}
+{% block page_title %}{% trans "Mon cabinet" %}{% endblock %}
+
+{% block content %}
+<div style="max-width:700px; margin:0 auto;">
+    <div class="card" style="margin-bottom:24px;">
+        <h2>{% trans "Membres du cabinet" %}</h2>
+        <table>
+            <thead><tr><th>{% trans "Nom" %}</th><th>{% trans "Rôle" %}</th></tr></thead>
+            <tbody>
+            {% for membre in membres %}
+            <tr>
+                <td>{{ membre.get_full_name|default:membre.username }}</td>
+                <td>
+                    {% if membre == cabinet.chef %}
+                        <strong>{% trans "Chef de cabinet" %}</strong>
+                    {% else %}
+                        {% trans "Avocat" %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if demandes_en_attente %}
+    <div class="card" style="margin-bottom:24px;">
+        <h2>{% trans "Demandes de partage reçues" %}</h2>
+        <table>
+            <thead><tr><th>{% trans "Type" %}</th><th>{% trans "Objet" %}</th><th>{% trans "Partagé par" %}</th><th>{% trans "Actions" %}</th></tr></thead>
+            <tbody>
+            {% for p in demandes_en_attente %}
+            <tr>
+                <td>{{ p.get_type_objet_display }}</td>
+                <td>{% if p.client %}{{ p.client }}{% else %}{{ p.dossier }}{% endif %}</td>
+                <td>{{ p.partage_par.get_full_name|default:p.partage_par.username }}</td>
+                <td>
+                    <form method="post" action="{% url 'repondre_partage' p.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button name="action" value="accepter" class="btn">{% trans "Accepter" %}</button>
+                    </form>
+                    <form method="post" action="{% url 'repondre_partage' p.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button name="action" value="refuser" class="btn">{% trans "Refuser" %}</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if demandes_creees %}
+    <div class="card" style="margin-bottom:24px;">
+        <h2>{% trans "Mes demandes de partage" %}</h2>
+        <table>
+            <thead><tr><th>{% trans "Type" %}</th><th>{% trans "Objet" %}</th><th>{% trans "Partagé avec" %}</th><th>{% trans "Statut" %}</th></tr></thead>
+            <tbody>
+            {% for p in demandes_creees %}
+            <tr>
+                <td>{{ p.get_type_objet_display }}</td>
+                <td>{% if p.client %}{{ p.client }}{% else %}{{ p.dossier }}{% endif %}</td>
+                <td>{{ p.partage_avec.get_full_name|default:p.partage_avec.username }}</td>
+                <td>{{ p.get_statut_display }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

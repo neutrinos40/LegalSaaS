@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{% trans "Rendez-vous" %}{% endblock %}
+{% block page_title %}{% trans "Mes rendez-vous" %}{% endblock %}
+
+{% block content %}
+<table>
+    <thead>
+        <tr>
+            <th>{% trans "Client" %}</th>
+            <th>{% trans "Dossier" %}</th>
+            <th>{% trans "Date et heure" %}</th>
+            <th>{% trans "Mode" %}</th>
+            <th>{% trans "Statut" %}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rdv in rendez_vous %}
+        <tr>
+            <td>{{ rdv.client }}</td>
+            <td>
+                {% if rdv.dossier %}<a class="lien-dossier" href="{% url 'fiche_dossier' rdv.dossier.id %}">{{ rdv.dossier.titre }}</a>{% else %}—{% endif %}
+            </td>
+            <td>{{ rdv.date_heure }}</td>
+            <td>{{ rdv.get_mode_display }}</td>
+            <td>{{ rdv.get_statut_display }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="aucun">{% trans "Aucun rendez-vous planifié." %}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

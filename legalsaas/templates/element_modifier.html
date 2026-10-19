@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ titre }}{% endblock %}
+{% block page_title %}{{ titre }}{% endblock %}
+
+{% block content %}
+<div class="card form-centre" style="max-width: 720px;">
+  <form method="post">
+    {% csrf_token %}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    {% for field in form %}
+      <div class="champ">
+        {{ field.label_tag }}
+        {{ field }}
+        {% for err in field.errors %}<div class="message erreur">{{ err }}</div>{% endfor %}
+        {% if field.help_text %}<div class="aide">{{ field.help_text }}</div>{% endif %}
+      </div>
+    {% endfor %}
+    <div class="ligne-boutons">
+      <a class="btn" style="background:var(--line); color:var(--text);" href="{{ retour|default:'/' }}">{% trans "Annuler" %}</a>
+      <button class="btn" type="submit">{% trans "Enregistrer" %}</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

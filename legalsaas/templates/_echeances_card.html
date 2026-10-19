@@ -1,0 +1,27 @@
+{% load i18n %}
+<div class="card">
+    <h2>{% trans "Échéances" %}</h2>
+    {% for echeance, urgence, jours in echeances %}
+        <div class="item {{ urgence }}">
+            <strong>{{ echeance.type_delai }}</strong> — {{ echeance.date_limite }}
+            {% if echeance.statut == 'depasse' %}
+                <span class="badge">{% trans "DÉPASSÉE" %}</span>
+            {% else %}
+                <span class="jours">{% blocktrans %}J-{{ jours }}{% endblocktrans %}</span>
+            {% endif %}
+        </div>
+    {% empty %}
+        <div class="empty">{% trans "Aucune échéance pour le moment." %}</div>
+    {% endfor %}
+    {% if echeances_page.paginator.num_pages > 1 %}
+    <div class="pagination">
+        {% if echeances_page.has_previous %}
+            <a class="pg" href="?page_echeances={{ echeances_page.previous_page_number }}&page_dossiers={{ dossiers.number }}&page_rdv={{ rendez_vous.number }}&actif={{ actif }}">‹ {% trans "Précédent" %}</a>
+        {% endif %}
+        <span class="compteur">{% blocktrans with numero=echeances_page.number total=echeances_page.paginator.num_pages %}Page {{ numero }} / {{ total }}{% endblocktrans %}</span>
+        {% if echeances_page.has_next %}
+            <a class="pg" href="?page_echeances={{ echeances_page.next_page_number }}&page_dossiers={{ dossiers.number }}&page_rdv={{ rendez_vous.number }}&actif={{ actif }}">{% trans "Suivant" %} ›</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
